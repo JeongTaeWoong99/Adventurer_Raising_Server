@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!-- 
+  ※ 플레이어의 C_ 즉, 플레이어가 보내는 패킷들은 ID가 필요없다.(어짜피 보내는 ID가 자신뿐이라, 자동 부여됨.)
+  ※ S_는 플레이어, 오브젝트, 몬스터 모두가 보낼 수 있기 때문에, ID와 타입이 필요하다.
+-->
+<PDL>
+    <packet name = "S_BroadcastPlayerEnterGame">
+      <int   name = "playerId"/>
+      <float name = "posX"/>
+      <float name = "posY"/>
+      <float name = "posZ"/>
+    </packet>
+    
+    <packet name = "C_PlayerLeaveGame">
+    </packet>
+    
+    <packet name = "S_BroadcastPlayerLeaveGame">
+        <int name = "playerId"/>
+    </packet>
+    
+    <packet name = "S_BroadcastPlayerList">
+       <list  name = "player">
+       <bool  name = "isSelf"/>
+       <int   name = "playerId"/>
+       <float name = "posX"/>
+       <float name = "posY"/>
+       <float name = "posZ"/>
+       </list>
+    </packet>
+    
+    <packet name = "C_Move">
+      <float name = "posX"/>
+      <float name = "posY"/>
+      <float name = "posZ"/>
+    </packet>
+    
+    <packet name = "S_BroadcastMove">
+      <int   name = "Id"/>
+      <float name = "posX"/>
+      <float name = "posY"/>
+      <float name = "posZ"/>
+    </packet>
+      
+    <packet name = "C_Animation">
+      <int name = "animationId"/>
+    </packet>
+      
+    <packet name = "S_BroadcastAnimation">
+      <int name = "Id"/>
+      <int name = "animationId"/>
+    </packet>
+
+    <packet name = "C_AttackAnimation">
+        <int   name = "attackerType"/>
+        <int   name = "animationId"/>
+        <int   name = "attackAnimeNumId"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
+    </packet>
+    
+    <packet name = "S_BroadcastAttackAnimation">
+        <int   name = "Id"/>
+        <int   name = "attackerType"/>
+        <int   name = "animationId"/>
+        <int   name = "attackAnimeNumId"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
+    </packet>
+    
+</PDL>

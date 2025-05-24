@@ -1,0 +1,17 @@
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.exe
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.deps.json
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.runtimeconfig.json
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.runtimeconfig.dev.json
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.dll
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\Server.pdb
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\ServerCore.dll
+C:\Users\ASUS\Desktop\MMO_Server\Server\bin\Debug\netcoreapp3.1\ServerCore.pdb
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.csproj.AssemblyReference.cache
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.AssemblyInfoInputs.cache
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.AssemblyInfo.cs
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.csproj.CoreCompileInputs.cache
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.csproj.Up2Date
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.dll
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.pdb
+C:\Users\ASUS\Desktop\MMO_Server\Server\obj\Debug\netcoreapp3.1\Server.genruntimeconfig.cache

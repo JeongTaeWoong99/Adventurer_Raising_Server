@@ -1,0 +1,57 @@
+﻿using System;
+using System.Net;
+using ServerCore;
+
+namespace Server
+{
+	class Program
+	{
+		// 싱글톤 리스너
+		static Listener _listener = new Listener();
+		
+		// 향후 다양한 GameRoom을 생성해서 관리하는 Manager가 등판할 예정
+		public static GameRoom Room = new GameRoom();
+		
+		static void FlushRoom()
+		{
+			Room.Push(() => Room.Flush());				// Room.Flush()는 현재까지 쌓여있는 _pendingList를 모든 클라들이게 전송하고, 비우는 메서드!
+			JobTimer.Instance.Push(FlushRoom, 25);	// 25ms 후에 다시 FlushRoom 호출.(40FPS)
+		}
+		
+		static void Main(string[] args)
+		{
+			// 기본 설정
+			string      host     = Dns.GetHostName();   		  // DNS (Domain Name System)
+			IPHostEntry ipHost   = Dns.GetHostEntry(host);
+			IPAddress   ipAddr   = ipHost.AddressList[0];
+			IPEndPoint  endPoint = new IPEndPoint(ipAddr, 7777);
+			
+			// 서버는 문지기가 필요.....
+			// 클라가 서버에 접속을 성공하면, 서버에서 클라를 관리해줄 ClientSession을 만들어주는
+			// SessionManager.Instance.Generate();를 콜백 함수로 등록.
+			_listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });
+			Console.WriteLine("Listening...");
+			
+			// 무한 루프 작업 스타트
+			JobTimer.Instance.Push(FlushRoom);
+			
+			// 무한 루프
+			while (true)
+			{
+				JobTimer.Instance.Flush();
+			}
+			
+			// FlushRoom 작업 등록 (250ms 간격) ←
+			// 	↓							  ↑
+			// while(true) 루프 시작			  ↑
+			// 	↓							  ↑
+			// JobTimer.Flush() 호출			  ↑
+			// 	↓							  ↑
+			//  250ms가 지났는지 체크함.		  ↑
+			// 	지났다면    -> FlushRoom 실행   ↑
+			// 	안 지났다면 -> 다음 작업 체크	  ↑
+			// 	↓							  ↑	
+			//  →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→↑
+		}
+	}
+}
