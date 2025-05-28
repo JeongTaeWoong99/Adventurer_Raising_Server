@@ -1,0 +1,34 @@
+{
+  "playerLevelInfos": [
+    {
+      "maxHp": "1500",
+      "attack": "75",
+      "moveSpeed": "5.5",
+      "b_Type": "Capsule",
+      "b_Size": "0.3 / 0.0 / 0.3",
+      "ab_Size": "1.0 / 1.0 / 1.0",
+      "level": "2",
+      "needEXP": "100"
+    },
+    {
+      "maxHp": "2000",
+      "attack": "100",
+      "moveSpeed": "6",
+      "b_Type": "Capsule",
+      "b_Size": "0.3 / 0.0 / 0.3",
+      "ab_Size": "1.0 / 1.0 / 1.0",
+      "level": "3",
+      "needEXP": "150"
+    },
+    {
+      "maxHp": "1000",
+      "attack": "50",
+      "moveSpeed": "5",
+      "b_Type": "Capsule",
+      "b_Size": "0.3 / 0.0 / 0.3",
+      "ab_Size": "1.0 / 1.0 / 1.0",
+      "level": "1",
+      "needEXP": "50"
+    }
+  ]
+}

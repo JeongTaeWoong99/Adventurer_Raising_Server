@@ -39,6 +39,9 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.C_Move, MakePacket<C_Move>);
 		 _handler.Add((ushort)PacketID.C_Move, PacketHandler.C_MoveHandler);
 
+		_makeFunc.Add((ushort)PacketID.C_Rotation, MakePacket<C_Rotation>);
+		 _handler.Add((ushort)PacketID.C_Rotation, PacketHandler.C_RotationHandler);
+
 		_makeFunc.Add((ushort)PacketID.C_Animation, MakePacket<C_Animation>);
 		 _handler.Add((ushort)PacketID.C_Animation, PacketHandler.C_AnimationHandler);
 

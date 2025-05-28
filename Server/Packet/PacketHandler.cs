@@ -34,6 +34,18 @@ class PacketHandler
 		room.Push(() => room.Move(clientSession, movePacket));
 	}
 	
+	public static void C_RotationHandler(PacketSession session, IPacket packet)
+	{
+		C_Rotation    rotationPacket = packet  as C_Rotation;
+		ClientSession clientSession  = session as ClientSession;
+
+		if (clientSession.Room == null)
+			return;
+		
+		GameRoom room = clientSession.Room;
+		room.Push(() => room.Rotation(clientSession, rotationPacket));
+	}
+	
 	public static void C_AnimationHandler(PacketSession session, IPacket packet)
 	{
 		C_Animation   animePacket   = packet  as C_Animation;

@@ -10,8 +10,10 @@ namespace Server
 		static SessionManager _session = new SessionManager();
 		public static SessionManager Instance { get { return _session; } }
 		
-		// 티켓 아이디
+		// 잠금
 		object _lock = new object();
+		
+		// 티켓 아이디
 		int _sessionId = 0;																 // 고유한 세션 아이디
 		Dictionary<int, ClientSession> _sessions = new Dictionary<int, ClientSession>(); // 여러개 존재
 		

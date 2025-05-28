@@ -59,6 +59,9 @@ namespace Server
 		}
 
 		// 클라이언트를 방에 입장시키고, 다른 클라이언트에게 알립니다.
+		// ★ 처음 입장   => Enter와 List
+		// ★ 나중에 입장 => List
+		// 같은 GameRoom 상태를 패킷으로 공유하고 있다....
 		public void Enter(ClientSession session)
 		{
 			// 새로운 플레이어를 관리할 ClientSession추가
@@ -71,23 +74,29 @@ namespace Server
 			{
 				players.players.Add(new S_BroadcastPlayerList.Player()
 				{
-					isSelf = (s == session), // 자기자신 bool isSelf로 판단.
-					playerId = s.SessionId,
-					posX = s.PosX,
-					posY = s.PosY,
-					posZ = s.PosZ,
+					isSelf      = (s == session), // 자기자신 bool isSelf로 판단.
+					playerId    = s.SessionId,	   
+					posX        = s.PosX,
+					posY        = s.PosY,
+					posZ        = s.PosZ,
+					rotationY   = s.RotationY,
+					animationId = s.AnimationId,
 				});
 			}
 			session.Send(players.Write()); // 새로 들어온 클라에게 바로! 보내주기 위해서,
 										   // Broadcast를 통해, _pendingList에 등록하지 않고
 										   // 바로 보내줌.(단일 세그먼트 Send 사용)
-										   
+			
+			// ★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆
 			// ☆ 먼저 들어와 있던 클라이언트들 모두에게, 새로운 클라이언트 입장을 알린다.
+			// ☆ 나중에 해당 부분에 바리에이션을 넣어서, 랜덤 위치 생성....
 			S_BroadcastPlayerEnterGame enter = new S_BroadcastPlayerEnterGame();
-			enter.playerId = session.SessionId;
-			enter.posX = 0;
-			enter.posY = 0;
-			enter.posZ = 0;
+			enter.playerId    = session.SessionId;
+			enter.posX        = 0;
+			enter.posY        = 0;
+			enter.posZ        = 0;
+			enter.rotationY   = 0;
+			enter.animationId = 0;
 			Broadcast(enter.Write()); // 모든 클라에게 보내주기 위해서,
 											 // Broadcast를 통해, _pendingList에 등록하고,
 											 // 순차적으로 보내줌.(다중 세그먼트 Send 사용)
@@ -120,6 +129,22 @@ namespace Server
 			move.posY = session.PosY;
 			move.posZ = session.PosZ;
 			Broadcast(move.Write());
+		}
+		
+		// 플레이어 애니메이션 처리
+		public void Rotation(ClientSession session, C_Rotation packet)
+		{
+			// 애니메이션 바꿔주고
+			session.RotationY = packet.rotationY;
+			Console.WriteLine(session.SessionId + "의 로테이션은 " + session.RotationY);
+			
+			// 플레이어들에게 발신할 애니메이션 객체 생성
+			S_BroadcastRotation rotation = new S_BroadcastRotation();
+			rotation.Id                  = session.SessionId; // 구분 ID
+			rotation.rotationY           = session.RotationY; // 회전값
+			
+			// 만든 애니메이션 패킷을 해당 GameRoom 내 플레이어들에게 전송
+			Broadcast(rotation.Write());
 		}
 		
 		// 플레이어 애니메이션 처리

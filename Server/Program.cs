@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 using ServerCore;
 
 namespace Server
@@ -18,8 +19,18 @@ namespace Server
 			JobTimer.Instance.Push(FlushRoom, 25);	// 25ms 후에 다시 FlushRoom 호출.(40FPS)
 		}
 		
-		static void Main(string[] args)
+		static async Task Main(string[] args)
 		{
+			// Firestore에서 데이터 다운로드 및 JSON 저장
+			var downloader = new FirebaseDataDownloader
+			(
+				// 프로젝트 ID
+				"d-rpg-server",																											
+				// 서비스 계정 키 파일 경로
+				@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json"
+			);
+			await downloader.DownloadAllAsync();
+		
 			// 기본 설정
 			string      host     = Dns.GetHostName();   		  // DNS (Domain Name System)
 			IPHostEntry ipHost   = Dns.GetHostEntry(host);

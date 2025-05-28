@@ -36,14 +36,17 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, MakePacket<S_BroadcastPlayerEnterGame>);
 		 _handler.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, PacketHandler.S_BroadcastPlayerEnterGameHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, MakePacket<S_BroadcastPlayerLeaveGame>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, PacketHandler.S_BroadcastPlayerLeaveGameHandler);
-
 		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerList, MakePacket<S_BroadcastPlayerList>);
 		 _handler.Add((ushort)PacketID.S_BroadcastPlayerList, PacketHandler.S_BroadcastPlayerListHandler);
 
+		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, MakePacket<S_BroadcastPlayerLeaveGame>);
+		 _handler.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, PacketHandler.S_BroadcastPlayerLeaveGameHandler);
+
 		_makeFunc.Add((ushort)PacketID.S_BroadcastMove, MakePacket<S_BroadcastMove>);
 		 _handler.Add((ushort)PacketID.S_BroadcastMove, PacketHandler.S_BroadcastMoveHandler);
+
+		_makeFunc.Add((ushort)PacketID.S_BroadcastRotation, MakePacket<S_BroadcastRotation>);
+		 _handler.Add((ushort)PacketID.S_BroadcastRotation, PacketHandler.S_BroadcastRotationHandler);
 
 		_makeFunc.Add((ushort)PacketID.S_BroadcastAnimation, MakePacket<S_BroadcastAnimation>);
 		 _handler.Add((ushort)PacketID.S_BroadcastAnimation, PacketHandler.S_BroadcastAnimationHandler);

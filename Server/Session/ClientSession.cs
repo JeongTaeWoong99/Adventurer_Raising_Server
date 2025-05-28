@@ -12,12 +12,14 @@ namespace Server
 	//  ⇒ Call PacketManager.MakePacket         ⇒  Call PacketHandler에서 해당하는 처리
 	class ClientSession : PacketSession
 	{
-		public int SessionId { get; set; }		// 고유 부여 아이디값(클라와 서버에서 동일하게 가지고 있음.)
-		public GameRoom Room { get; set; }	   // 현재 어떤 방에 있는지
-		public float PosX { get; set; }
-		public float PosY { get; set; }
-		public float PosZ { get; set; }
-		public int AnimationId { get; set; }
+		public GameRoom Room        { get; set; } // 현재 어떤 방에 있는지
+		public int      SessionId   { get; set; } // 고유 부여 아이디값(클라와 서버에서 동일하게 가지고 있음.)
+		public float    PosX        { get; set; } 
+		public float    PosY        { get; set; } 
+		public float    PosZ        { get; set; } 
+		public float    RotationY   { get; set; } // 현재 회전값
+		public int      AnimationId { get; set; } // 현재 애니메이션
+		public int      currentHP   { get; set; } // 현재 HP
 
 		public override void OnConnected(EndPoint endPoint)
 		{

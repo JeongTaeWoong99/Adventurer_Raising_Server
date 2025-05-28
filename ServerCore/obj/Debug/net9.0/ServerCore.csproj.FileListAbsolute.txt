@@ -31,3 +31,4 @@ C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\ServerCore\obj\Debug\net9
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\ServerCore\obj\Debug\net9.0\refint\ServerCore.dll
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\ServerCore\obj\Debug\net9.0\ServerCore.pdb
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\ServerCore\obj\Debug\net9.0\ref\ServerCore.dll
+C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\ServerCore\obj\Debug\net9.0\ServerCore.sourcelink.json
