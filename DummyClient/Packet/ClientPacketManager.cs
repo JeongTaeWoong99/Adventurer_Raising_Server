@@ -1,6 +1,7 @@
 using ServerCore;	
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 // ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 // ☆ 자동 완성 패킷(PacketFormat에서 주석 추가)
@@ -33,14 +34,20 @@ public class PacketManager
 	public void Register()
 	{
 		
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, MakePacket<S_BroadcastPlayerEnterGame>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, PacketHandler.S_BroadcastPlayerEnterGameHandler);
+		_makeFunc.Add((ushort)PacketID.S_RequestPlayerState, MakePacket<S_RequestPlayerState>);
+		 _handler.Add((ushort)PacketID.S_RequestPlayerState, PacketHandler.S_RequestPlayerStateHandler);
 
 		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerList, MakePacket<S_BroadcastPlayerList>);
 		 _handler.Add((ushort)PacketID.S_BroadcastPlayerList, PacketHandler.S_BroadcastPlayerListHandler);
 
+		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, MakePacket<S_BroadcastPlayerEnterGame>);
+		 _handler.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, PacketHandler.S_BroadcastPlayerEnterGameHandler);
+
 		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, MakePacket<S_BroadcastPlayerLeaveGame>);
 		 _handler.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, PacketHandler.S_BroadcastPlayerLeaveGameHandler);
+
+		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerDataChange, MakePacket<S_BroadcastPlayerDataChange>);
+		 _handler.Add((ushort)PacketID.S_BroadcastPlayerDataChange, PacketHandler.S_BroadcastPlayerDataChangeHandler);
 
 		_makeFunc.Add((ushort)PacketID.S_BroadcastMove, MakePacket<S_BroadcastMove>);
 		 _handler.Add((ushort)PacketID.S_BroadcastMove, PacketHandler.S_BroadcastMoveHandler);

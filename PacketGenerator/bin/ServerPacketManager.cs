@@ -1,6 +1,7 @@
 using ServerCore;	
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 // ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 // ☆ 자동 완성 패킷(PacketFormat에서 주석 추가)
@@ -33,8 +34,17 @@ public class PacketManager
 	public void Register()
 	{
 		
+		_makeFunc.Add((ushort)PacketID.C_PlayerState, MakePacket<C_PlayerState>);
+		 _handler.Add((ushort)PacketID.C_PlayerState, PacketHandler.C_PlayerStateHandler);
+
+		_makeFunc.Add((ushort)PacketID.C_SceneChange, MakePacket<C_SceneChange>);
+		 _handler.Add((ushort)PacketID.C_SceneChange, PacketHandler.C_SceneChangeHandler);
+
 		_makeFunc.Add((ushort)PacketID.C_PlayerLeaveGame, MakePacket<C_PlayerLeaveGame>);
 		 _handler.Add((ushort)PacketID.C_PlayerLeaveGame, PacketHandler.C_PlayerLeaveGameHandler);
+
+		_makeFunc.Add((ushort)PacketID.C_PlayerInfoChange, MakePacket<C_PlayerInfoChange>);
+		 _handler.Add((ushort)PacketID.C_PlayerInfoChange, PacketHandler.C_PlayerInfoChangeHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_Move, MakePacket<C_Move>);
 		 _handler.Add((ushort)PacketID.C_Move, PacketHandler.C_MoveHandler);

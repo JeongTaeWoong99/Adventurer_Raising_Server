@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using ServerCore;
+using System.Collections.Generic;
 
 namespace Server
 {
@@ -10,12 +11,16 @@ namespace Server
 		// 싱글톤 리스너
 		static Listener _listener = new Listener();
 		
-		// 향후 다양한 GameRoom을 생성해서 관리하는 Manager가 등판할 예정
-		public static GameRoom Room = new GameRoom();
+		// 여러 GameRoom을 관리하기 위한 Dictionary 추가
+		public static Dictionary<string, GameRoom> GameRooms = new Dictionary<string, GameRoom>();
 		
 		static void FlushRoom()
 		{
-			Room.Push(() => Room.Flush());				// Room.Flush()는 현재까지 쌓여있는 _pendingList를 모든 클라들이게 전송하고, 비우는 메서드!
+			// 모든 룸에 들어와 있는 작업들 처리....
+			foreach (GameRoom room in GameRooms.Values)
+			{
+				room.Push(() => room.Flush());
+			}
 			JobTimer.Instance.Push(FlushRoom, 25);	// 25ms 후에 다시 FlushRoom 호출.(40FPS)
 		}
 		
@@ -24,10 +29,8 @@ namespace Server
 			// Firestore에서 데이터 다운로드 및 JSON 저장
 			var downloader = new FirebaseDataDownloader
 			(
-				// 프로젝트 ID
-				"d-rpg-server",																											
-				// 서비스 계정 키 파일 경로
-				@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json"
+				"d-rpg-server",																											// 프로젝트 ID																										
+				@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json"  // 서비스 계정 키 파일 경로
 			);
 			await downloader.DownloadAllAsync();
 		

@@ -7,9 +7,52 @@
 <!-- S_BroadcastPlayerEnterGame와  S_BroadcastPlayerList는 동일한 패킷 유지해야 함...
      playerId부터 형식이 동일해야 함. 클라가 서버 연결 시, EnterGame을 보내기 때문에, GameRoom에 값들을 설정해 주어야 하고,
      그 설정된 값들을 이용하여, PlayerList를 보내줘야 하기 때문!!! -->
+
 <PDL>
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- 선 SR 패킷 = 처음 연결되면, 연결된 클라에게 정보를 요청 -->
+    <packet name = "S_RequestPlayerState"> 
+        <int    name = "Id"/>
+    </packet>
+
+    <!-- 후 CR 패킷 = 요청한 정보를 보내줌 -->
+    <packet name = "C_PlayerState">
+        <string name = "savedScene"/>
+        <string name = "nickname"/>
+        <int    name = "currentLevel"/>
+        <int    name = "currentHp"/>
+        <string name = "savedPos"/>
+    </packet>
+    
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- 세팅이 끝나면, 자기 자신 및 모든 플레이어 Room.Enter를 통해, 정보를 받아옴  -->
+    <packet name = "S_BroadcastPlayerList">
+       <list  name = "player">
+       
+       <string name = "nickname"/>
+       <int    name = "currentLevel"/>
+       <int    name = "currentHp"/>
+       
+       <bool  name = "isSelf"/>
+       <int   name = "playerId"/>
+       <float name = "posX"/>
+       <float name = "posY"/>
+       <float name = "posZ"/>
+       <float name = "rotationY"/>
+       
+       <int   name = "animationId"/>
+       </list>
+    </packet>
+    
+    <!-- 다른 플레이어들에게 입장 알리기-->
     <packet name = "S_BroadcastPlayerEnterGame">
       <int   name = "playerId"/>
+      
+      <string name = "nickname"/>
+      <int    name = "currentLevel"/>
+      <int    name = "currentHp"/>
+      
       <float name = "posX"/>
       <float name = "posY"/>
       <float name = "posZ"/>
@@ -17,17 +60,17 @@
       <int   name = "animationId"/>
     </packet>
     
-    <packet name = "S_BroadcastPlayerList">
-       <list  name = "player">
-       <bool  name = "isSelf"/>
-       <int   name = "playerId"/>
-       <float name = "posX"/>
-       <float name = "posY"/>
-       <float name = "posZ"/>
-       <float name = "rotationY"/>
-       <int   name = "animationId"/>
-       </list>
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- 플레이어가 C_SceneChange를 보내면서, 방을 옮기면서
+         서버에서 PlayerLeaveGame도 같이 보내지고, 
+         Etner 및 List도 함께 일어난다-->
+    <packet name = "C_SceneChange">
+        <string name = "fromScene"/>
+        <string name = "toScene"/>
     </packet>
+    
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_PlayerLeaveGame">
     </packet>
@@ -35,6 +78,27 @@
     <packet name = "S_BroadcastPlayerLeaveGame">
         <int name = "playerId"/>
     </packet>
+    
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    
+    <packet name = "C_PlayerInfoChange">
+        <int name = "currentLevel"/>
+        <int name = "currentHp"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
+    </packet>
+
+    <packet name = "S_BroadcastPlayerDataChange">
+        <int name = "playerId"/>
+        <int name = "currentLevel"/>
+        <int name = "currentHp"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
+    </packet>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_Move">
       <float name = "posX"/>
@@ -48,6 +112,8 @@
       <float name = "posY"/>
       <float name = "posZ"/>
     </packet>
+    
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       
     <packet name = "C_Rotation">
         <float name = "rotationY"/>
@@ -58,6 +124,8 @@
         <float name = "rotationY"/>
     </packet>
     
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    
     <packet name = "C_Animation">
       <int name = "animationId"/>
     </packet>
@@ -66,6 +134,8 @@
       <int name = "Id"/>
       <int name = "animationId"/>
     </packet>
+    
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_AttackAnimation">
         <int   name = "attackerType"/>
@@ -85,5 +155,6 @@
         <float name = "posY"/>
         <float name = "posZ"/>
     </packet>
-    
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 </PDL>

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Google.Cloud.Firestore;
 using Newtonsoft.Json;
+using Server;
 
 #region 데이터 클래스 정의
 [Serializable]
@@ -56,6 +58,14 @@ public class ObjectSceneSettingData
     public string makePos;
 }
 [Serializable]
+public class NetworkRoomSceneData
+{
+    // fromScene이름으로 네트워크 Room을 만듬. ※ 단, Unknown은 제외.
+    public string fromScene;
+    public string toScene;       
+    public string spawnPosition; 
+}
+[Serializable]
 public class PlayerLevelInfoList
 { public List<PlayerInfoData> playerLevelInfos; }
 [Serializable]
@@ -67,6 +77,10 @@ public class MonsterSceneSettingList
 [Serializable]
 public class ObjectSceneSettingList
 { public List<ObjectSceneSettingData> objectSceneSettingInfos; }
+[Serializable]
+public class  NetworkRoomSceneList
+{ public List<NetworkRoomSceneData>  networkRoomSceneInfos; }
+
 #endregion
 
 public class FirebaseDataDownloader
@@ -88,7 +102,58 @@ public class FirebaseDataDownloader
         await LoadAndSaveCollectionToJson<MonsterAndObjectInfoData, MonsterAndObjectList>   ("objectInfos",             "ObjectInfoData.json");
         await LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json");
         await LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json");
+        await LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json");
+        
+        CreateGameRoomsBasedOnSceneData();
+        
         Console.WriteLine("DB 세팅 완료!");
+    }
+
+    private void CreateGameRoomsBasedOnSceneData()
+    {
+        string filePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "NetworkRoomSceneData.json"); 
+        if (File.Exists(filePath))
+        {
+            string jsonData = File.ReadAllText(filePath);
+            NetworkRoomSceneList sceneListData = JsonConvert.DeserializeObject<NetworkRoomSceneList>(jsonData);
+
+            if (sceneListData != null && sceneListData.networkRoomSceneInfos != null)
+            {
+                foreach (NetworkRoomSceneData sceneData in sceneListData.networkRoomSceneInfos)
+                {
+                    
+                    if (!string.IsNullOrEmpty(sceneData.fromScene) && !Program.GameRooms.ContainsKey(sceneData.fromScene))
+                    {
+                        // Unknown은 제외.
+                        if (sceneData.fromScene.Equals("UnKnown"))
+                        {
+                            //Console.WriteLine("UnKnown GameRoom 생성 제외");
+                        }
+                        else
+                        {
+                            Program.GameRooms.Add(sceneData.fromScene, new GameRoom(sceneData.fromScene));
+                            //Console.WriteLine($"GameRoom 생성 : {sceneData.fromScene}");
+                        }
+                    }
+                    else if (Program.GameRooms.ContainsKey(sceneData.fromScene))
+                    {
+                        //Console.WriteLine($"이미 '{sceneData.fromScene}' 이름의 GameRoom이 존재합니다.");
+                    }
+                    else if (string.IsNullOrEmpty(sceneData.fromScene))
+                    {
+                        //Console.WriteLine($"sceneName이 비어있는 NetworkRoomSceneData 항목이 있습니다.");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Error: NetworkRoomSceneData.json 파일 내용이 올바르지 않거나 비어있습니다. ({filePath})");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Error: NetworkRoomSceneData.json 파일을 찾을 수 없습니다. 경로: {filePath}");
+        }
     }
 
     private async Task LoadAndSaveCollectionToJson<TItem, TList>(string collectionName, string outputFileName) where TItem : new() where TList : new()

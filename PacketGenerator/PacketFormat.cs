@@ -10,6 +10,7 @@
 @"using ServerCore;	
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 // ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 // ☆ 자동 완성 패킷(PacketFormat에서 주석 추가)
@@ -113,6 +114,7 @@ public class PacketManager
 @"using System;
 using System.Collections.Generic;
 using ServerCore;
+using System.Text;
 
 // ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 // ☆ 자동 완성 패킷(PacketFormat에서 주석 추가)
@@ -121,6 +123,7 @@ public enum PacketID
 	// 1000번대 = 플레이어
 	// 2000번대 = 오브젝트
 	// 3000번대 = 몬스터
+	// 4000번대 = 공통
 	{0}
 }}
 

@@ -1,4 +1,7 @@
-﻿using Server;
+﻿using System;
+using System.Diagnostics;
+using System.Numerics;
+using Server;
 using ServerCore;
 
 // 다 조립된 패킷이 무엇을 호출할지 처리하는 클래스.
@@ -11,6 +14,42 @@ class PacketHandler
 	// 클라이언트 쪽에서 나가고 싶다는 패킷을 명시적으로 보냈을 때, 알아서 나갈 수 있도록 해준다.
 	// 클라쪽에서 명시적으로 나가지 않고,강제종료된 경우는
 	// ClientSession.cs의 OnDisconnected에서 감지 후, 방에서 나가게 한다.
+
+	public static void C_PlayerStateHandler(PacketSession session, IPacket packet)
+	{
+		C_PlayerState playerStatePacket = packet  as C_PlayerState;
+		ClientSession clientSession     = session as ClientSession;
+
+		// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
+		string   targetSceneName = playerStatePacket.savedScene;
+		GameRoom targetRoom      = null;
+		
+		// 찾는 방 이름이 있음
+		if (Program.GameRooms.TryGetValue(targetSceneName, out targetRoom))
+			Console.WriteLine("이전 저장된 방 정보가 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
+		// 찾는 방 이름이 없음
+		else
+		{
+			Program.GameRooms.TryGetValue("Village", out targetRoom);
+			Console.WriteLine("이전 저장된 방 정보가 Unknown. Village로 이동.");
+		}
+		clientSession.Room = targetRoom;
+		
+		// 기본정보 세팅
+		clientSession.nickname     = playerStatePacket.nickname;
+		clientSession.currentHP    = playerStatePacket.currentHp;
+		clientSession.currentLevel = playerStatePacket.currentLevel;
+		Vector3 savedPos = Extension.ParseVector3(playerStatePacket.savedPos);
+		clientSession.PosX = savedPos.X;
+		clientSession.PosY = savedPos.Y;
+		clientSession.PosZ = savedPos.Z;
+		
+		// 원래 enter 및 list 작업이 이루어지도록 하기...
+		// 해당 룸에서 Enter작업이 실행되기 때문에, 해당 방에 있는 플레이어들에게만 Enter 및 List 작업이 실행됨...
+		targetRoom._sessions.Add(clientSession);
+		targetRoom.Push(() => targetRoom.Enter(clientSession));
+	}
+	
 	public static void C_PlayerLeaveGameHandler(PacketSession session, IPacket packet)
 	{
 		ClientSession clientSession = session as ClientSession;
@@ -20,6 +59,42 @@ class PacketHandler
 		
 		GameRoom room = clientSession.Room;
 		room.Push(() => room.Leave(clientSession));
+	}
+	
+	public static void C_PlayerInfoChangeHandler(PacketSession session, IPacket packet)
+	{
+		C_PlayerInfoChange  playerInfoChange = packet  as C_PlayerInfoChange;
+		ClientSession       clientSession    = session as ClientSession;
+
+		if (clientSession.Room == null)
+			return;
+		
+		GameRoom room = clientSession.Room;
+		room.Push(() => room.PlayerInfoChange(clientSession, playerInfoChange));
+	}
+	
+	public static void C_SceneChangeHandler(PacketSession session, IPacket packet)
+	{
+		C_SceneChange  sceneChangePaket = packet  as C_SceneChange;
+		ClientSession  clientSession    = session as ClientSession;
+		
+		// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
+		string   targetSceneName = sceneChangePaket.toScene;
+		GameRoom targetRoom      = null;
+			
+		// 찾는 방 이름이 있음
+		if (Program.GameRooms.TryGetValue(targetSceneName, out targetRoom))
+			Console.WriteLine("옮겨 가려는 룸 이름은 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
+		else
+		{
+			Console.WriteLine("옮겨 가려는 방 찾기 실패.");
+			return;
+		}
+		clientSession.Room = targetRoom;
+		
+		// 동일하게 옮겨간 방에서 Enter 및 List 진행
+		targetRoom._sessions.Add(clientSession);
+		targetRoom.Push(() => targetRoom.Enter(clientSession));
 	}
 
 	public static void C_MoveHandler(PacketSession session, IPacket packet)

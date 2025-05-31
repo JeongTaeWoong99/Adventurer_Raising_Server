@@ -10,22 +10,33 @@ namespace Server
 	// GameRoom 클래스는 게임 내의 방을 관리하며, 클라이언트 세션을 관리하고 메시지를 브로드캐스트함.
 	class GameRoom : IJobQueue
 	{
+		# region 기본 구성요소
+		// GameRoom에 씬 이름을 넣어서, 룸을 나누기
+		public string SceneName { get; private set; }
+		
 		// ServerCore의 JobQueue를 사용하기 위해, 생성.
 		// ★ 단 하나를 만들어서, 단일 쓰레드를 이용해 사용한다!
 		JobQueue _jobQueue = new JobQueue();
 		
 		// 클라이언트 세션 목록(방에 들어와 있는 클라이언트의 대리자)
-		List<ClientSession> _sessions = new List<ClientSession>();
+		public List<ClientSession> _sessions = new List<ClientSession>();
 			
 		// 전송 대기 중인 메시지 목록(JobQueue에 액션을 Push 및 Flush를 통해, 순차적으로 저장됨.)
-		List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
+		private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
 		
+
 		public enum Layer
 		{
 			Object  = 7,
 			Monster = 8,
 			//Ground  = 9, Block   = 10,
 			Player  = 11,
+		}
+		
+		public GameRoom(string sceneName)
+		{
+			SceneName = sceneName;
+			//Console.WriteLine($"GameRoom '{SceneName}' 초기화 완료.");
 		}
 		
 		// ServerCore의 JobQueue에 작업 푸쉬한다.
@@ -57,24 +68,26 @@ namespace Server
 		{
 			_pendingList.Add(segment);			
 		}
-
+		
+		# endregion
+		
 		// 클라이언트를 방에 입장시키고, 다른 클라이언트에게 알립니다.
 		// ★ 처음 입장   => Enter와 List
 		// ★ 나중에 입장 => List
 		// 같은 GameRoom 상태를 패킷으로 공유하고 있다....
 		public void Enter(ClientSession session)
 		{
-			// 새로운 플레이어를 관리할 ClientSession추가
-			_sessions.Add(session);
-			session.Room = this;
-			
 			// ☆ 새로 들어온 클라이언트한테는 모든 플레이어 목록 전송.
 			S_BroadcastPlayerList players = new S_BroadcastPlayerList();
 			foreach (ClientSession s in _sessions)
 			{
 				players.players.Add(new S_BroadcastPlayerList.Player()
 				{
-					isSelf      = (s == session), // 자기자신 bool isSelf로 판단.
+					isSelf      = (s == session),
+					nickname     = s.nickname,
+					currentHp    = s.currentHP,
+					currentLevel = s.currentLevel,
+					
 					playerId    = s.SessionId,	   
 					posX        = s.PosX,
 					posY        = s.PosY,
@@ -91,11 +104,17 @@ namespace Server
 			// ☆ 먼저 들어와 있던 클라이언트들 모두에게, 새로운 클라이언트 입장을 알린다.
 			// ☆ 나중에 해당 부분에 바리에이션을 넣어서, 랜덤 위치 생성....
 			S_BroadcastPlayerEnterGame enter = new S_BroadcastPlayerEnterGame();
+			
+			enter.nickname     = session.nickname;
+			enter.currentHp    = session.currentHP;
+			enter.currentLevel = session.currentLevel;
+			
 			enter.playerId    = session.SessionId;
-			enter.posX        = 0;
-			enter.posY        = 0;
-			enter.posZ        = 0;
-			enter.rotationY   = 0;
+			enter.posX        = session.PosX;	// DB에 저장된 정보를 앞서 받아와서 세팅!
+			enter.posY        = session.PosY;	// DB에 저장된 정보를 앞서 받아와서 세팅!
+			enter.posZ        = session.PosZ;	// DB에 저장된 정보를 앞서 받아와서 세팅!
+			
+			enter.rotationY   = 180f;
 			enter.animationId = 0;
 			Broadcast(enter.Write()); // 모든 클라에게 보내주기 위해서,
 											 // Broadcast를 통해, _pendingList에 등록하고,
@@ -105,14 +124,39 @@ namespace Server
 		// 클라이언트를 방에서 제거하고, 다른 클라이언트에게 알리기
 		public void Leave(ClientSession session)
 		{
-			// 플레이어 제거하고
+			Console.WriteLine(SceneName + "에서 " + session.nickname + "가 Leave함...");
+			
+			// 플레이어 방에서 제거
 			_sessions.Remove(session);
-
+			
 			// 모두에게 알리기 위해, 대기 목록에 추가
 			S_BroadcastPlayerLeaveGame leave = new S_BroadcastPlayerLeaveGame();
 			leave.playerId = session.SessionId;
 			Broadcast(leave.Write());
+			
+			foreach (var VARIABLE in _sessions)
+				Console.WriteLine(SceneName + "에 남은 플레이어 = " + VARIABLE.nickname);
 		}
+		
+		// 클라이언트의 위치를 업데이트하고, 다른 클라이언트에게 알립니다.
+		public void PlayerInfoChange(ClientSession session, C_PlayerInfoChange packet)
+		{
+			// 바뀐 정보 반영해주고
+			session.currentLevel = packet.currentLevel;
+			session.currentHP    = packet.currentHp;
+			
+			// 모두에게 알리기 위해, 대기 목록에 추가
+			S_BroadcastPlayerDataChange change = new S_BroadcastPlayerDataChange();
+			change.playerId     = session.SessionId;
+			change.currentHp    = packet.currentHp;
+			change.currentLevel = session.currentLevel;
+			Broadcast(change.Write());
+		}
+		
+		// 클라이언트의
+		// public void SceneChange(ClientSession session, C_SceneChange packet)
+		// {
+		// }
 
 		// 클라이언트의 위치를 업데이트하고, 다른 클라이언트에게 알립니다.
 		public void Move(ClientSession session, C_Move packet)
@@ -136,7 +180,7 @@ namespace Server
 		{
 			// 애니메이션 바꿔주고
 			session.RotationY = packet.rotationY;
-			Console.WriteLine(session.SessionId + "의 로테이션은 " + session.RotationY);
+			//Console.WriteLine(session.SessionId + "의 로테이션은 " + session.RotationY);
 			
 			// 플레이어들에게 발신할 애니메이션 객체 생성
 			S_BroadcastRotation rotation = new S_BroadcastRotation();
@@ -152,7 +196,7 @@ namespace Server
 		{
 			// 애니메이션 바꿔주고
 			session.AnimationId = packet.animationId;
-			Console.WriteLine(session.SessionId + "의 애니메이션 아이디는 " +session.AnimationId);
+			//Console.WriteLine(session.SessionId + "의 애니메이션 아이디는 " +session.AnimationId);
 			
 			// 플레이어들에게 발신할 애니메이션 객체 생성
 			S_BroadcastAnimation anime = new S_BroadcastAnimation();
@@ -168,7 +212,7 @@ namespace Server
 		{
 			// 애니메이션 바꿔주고
 			session.AnimationId = packet.animationId;
-			Console.WriteLine(session.SessionId + "의 애니메이션 아이디는 " + session.AnimationId);
+			//Console.WriteLine(session.SessionId + "의 애니메이션 아이디는 " + session.AnimationId);
 			
 			// 플레이어들에게 발신할 공격 애니메이션 객체 생성
 			S_BroadcastAttackAnimation attackAnimation = new S_BroadcastAttackAnimation();

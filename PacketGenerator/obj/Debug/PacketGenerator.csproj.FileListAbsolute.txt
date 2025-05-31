@@ -40,3 +40,4 @@ C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\PacketGenerator\obj\Debug
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\PacketGenerator\obj\Debug\PacketGenerator.pdb
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\PacketGenerator\obj\Debug\PacketGenerator.genruntimeconfig.cache
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\PacketGenerator\obj\Debug\ref\PacketGenerator.dll
+C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\PacketGenerator\obj\Debug\PacketGenerator.sourcelink.json
