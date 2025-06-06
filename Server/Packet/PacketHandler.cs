@@ -39,6 +39,7 @@ class PacketHandler
 		clientSession.nickname     = playerStatePacket.nickname;
 		clientSession.currentHP    = playerStatePacket.currentHp;
 		clientSession.currentLevel = playerStatePacket.currentLevel;
+		
 		Vector3 savedPos = Extension.ParseVector3(playerStatePacket.savedPos);
 		clientSession.PosX = savedPos.X;
 		clientSession.PosY = savedPos.Y;

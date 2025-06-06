@@ -31,16 +31,9 @@ namespace Server
 			// 서버에 클라이언트가 접속을 했다면 강제로 방에 들어오게 만듬.
 			// 하지만 실제 게임에서는 클라이언트 쪽에서 모든 리소스 업데이트가 완료 되었을 때,
 			// 서버에 신호를 보내고 그때 방에 들어오는 작업을 해줘야 한다.
-			//Program.Room.Push(() => Program.Room.Enter(this));
-			// ----> R_PlayerState C_PlayerState가 끝나면, 실행하도록 수정....
-			
-			
 			// 연결되면, 일단 연결된 클라이언트에게 정보를 요청한다.
-			// 아직 방에 들어가 있지 않기 때문에, Program.Room.Push를 통해, 작업을 수행하는게 아닌
-			// 배정 전, 즉 방 밖에서 작업을 수행한다...
-			//Console.WriteLine("연결된 후, OnConnected에서 통해, 정보를 요청");
-			// ☆ 새로 들어온 클라이언트한테는 정보 요청 보내기
-			// 바로 보내줌.(단일 세그먼트 Send 사용)
+			// 아직 방에 들어가 있지 않기 때문에, Program.Room.Push를 통해, 작업을 수행하는게 아닌, 배정 전, 즉 방 밖에서 작업을 수행한다...
+			// ☆ 새로 들어온 클라이언트한테는 정보 요청 보내기 (바로 보내줌. 단일 세그먼트 Send 사용)
 			S_RequestPlayerState requestState = new S_RequestPlayerState(); // 패킷 생성
 			requestState.Id = SessionId;									// 자동 생성된 패킷 ID 사용
 			Send(requestState.Write());										// Session의 Send를 통해, 바로 보내주기

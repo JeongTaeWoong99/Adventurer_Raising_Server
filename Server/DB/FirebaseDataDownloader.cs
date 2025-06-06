@@ -96,13 +96,17 @@ public class FirebaseDataDownloader
 
     public async Task DownloadAllAsync()
     {
-        // 🔸 컬렉션 별 비동기 JSON 저장
-        await LoadAndSaveCollectionToJson<PlayerInfoData,           PlayerLevelInfoList>    ("playerLevelInfos",        "PlayerLevelInfoData.json");
-        await LoadAndSaveCollectionToJson<MonsterAndObjectInfoData, MonsterAndObjectList>   ("monsterInfos",            "MonsterInfoData.json");
-        await LoadAndSaveCollectionToJson<MonsterAndObjectInfoData, MonsterAndObjectList>   ("objectInfos",             "ObjectInfoData.json");
-        await LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json");
-        await LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json");
-        await LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json");
+        // 병렬 실행
+        var tasks = new List<Task>
+        {
+            LoadAndSaveCollectionToJson<PlayerInfoData,           PlayerLevelInfoList>    ("playerLevelInfos",        "PlayerLevelInfoData.json"),
+            LoadAndSaveCollectionToJson<MonsterAndObjectInfoData, MonsterAndObjectList>   ("monsterInfos",            "MonsterInfoData.json"),
+            LoadAndSaveCollectionToJson<MonsterAndObjectInfoData, MonsterAndObjectList>   ("objectInfos",             "ObjectInfoData.json"),
+            LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json"),
+            LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json"),
+            LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json"),
+        };
+        await Task.WhenAll(tasks);
         
         CreateGameRoomsBasedOnSceneData();
         

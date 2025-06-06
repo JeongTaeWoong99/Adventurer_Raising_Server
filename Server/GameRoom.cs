@@ -124,8 +124,6 @@ namespace Server
 		// 클라이언트를 방에서 제거하고, 다른 클라이언트에게 알리기
 		public void Leave(ClientSession session)
 		{
-			Console.WriteLine(SceneName + "에서 " + session.nickname + "가 Leave함...");
-			
 			// 플레이어 방에서 제거
 			_sessions.Remove(session);
 			
@@ -133,9 +131,6 @@ namespace Server
 			S_BroadcastPlayerLeaveGame leave = new S_BroadcastPlayerLeaveGame();
 			leave.playerId = session.SessionId;
 			Broadcast(leave.Write());
-			
-			foreach (var VARIABLE in _sessions)
-				Console.WriteLine(SceneName + "에 남은 플레이어 = " + VARIABLE.nickname);
 		}
 		
 		// 클라이언트의 위치를 업데이트하고, 다른 클라이언트에게 알립니다.
@@ -144,6 +139,9 @@ namespace Server
 			// 바뀐 정보 반영해주고
 			session.currentLevel = packet.currentLevel;
 			session.currentHP    = packet.currentHp;
+			session.PosX         = packet.posX;
+			session.PosY         = packet.posY;
+			session.PosZ         = packet.posZ;
 			
 			// 모두에게 알리기 위해, 대기 목록에 추가
 			S_BroadcastPlayerDataChange change = new S_BroadcastPlayerDataChange();

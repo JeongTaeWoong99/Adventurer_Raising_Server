@@ -1,21 +1,6 @@
 {
   "monsterAndObjectInfos": [
     {
-      "nickName": "Spike Trap",
-      "maxHp": "9999",
-      "attack": "100",
-      "moveSpeed": "0",
-      "b_Type": "Box",
-      "b_Size": "0.0 / 0.0 / 0.0",
-      "ab_Size": "1.5 / 1.5 / 1.5",
-      "serialNumber": "O001",
-      "dropExp": "0",
-      "invincibility": "TRUE",
-      "find_Radius": "0",
-      "attack1_Length": "1",
-      "attack1_Timing": "0.33"
-    },
-    {
       "nickName": "Dummy",
       "maxHp": "250",
       "attack": "0",
@@ -29,6 +14,21 @@
       "find_Radius": "0",
       "attack1_Length": "0",
       "attack1_Timing": "0"
+    },
+    {
+      "nickName": "Spike Trap",
+      "maxHp": "9999",
+      "attack": "100",
+      "moveSpeed": "0",
+      "b_Type": "Box",
+      "b_Size": "0.0 / 0.0 / 0.0",
+      "ab_Size": "1.5 / 1.5 / 1.5",
+      "serialNumber": "O001",
+      "dropExp": "0",
+      "invincibility": "TRUE",
+      "find_Radius": "0",
+      "attack1_Length": "1",
+      "attack1_Timing": "0.33"
     }
   ]
 }
