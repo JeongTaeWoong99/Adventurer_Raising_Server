@@ -86,7 +86,7 @@ namespace ServerCore
 		public abstract void OnSend(int numOfBytes);
 		public abstract void OnDisconnected(EndPoint endPoint);
 		
-		// 커넥트 완료후, 초기화
+		// 커넥트 완료후, 초기화(연결된 클라이언트의 전용 회선을 연결)
 		public void Start(Socket socket)
 		{
 			_socket = socket;

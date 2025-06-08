@@ -8,34 +8,23 @@ namespace Server
 	
 	// <서버에서 클라이언트 일을 하는 대리자>
 	// 	⇒ Server.ClientSession에서 Packet을 수신  ⇒  Call OnRecvPacket                        
-	// 	⇒ Call ClientSessionn.RecvPacket        ⇒  Call PacketManager.Instance.OnRecvPacket
-	//  ⇒ Call PacketManager.MakePacket         ⇒  Call PacketHandler에서 해당하는 처리
-	class ClientSession : PacketSession
+	// 	⇒ Call ClientSessionn.RecvPacket         ⇒  Call PacketManager.Instance.OnRecvPacket
+	//  ⇒ Call PacketManager.MakePacket          ⇒  Call PacketHandler에서 해당하는 처리
+	public class ClientSession : CommonSession
 	{
-		public GameRoom Room        { get; set; } // ★ 현재 어떤 방에 있는지(== saveScene을 통해서, 바로 넣어준다...)
-		
-		public string   nickname       { get; set; } 
-		public int      currentHP      { get; set; } 
-		public int      currentLevel   { get; set; } 
-		
-		public int      SessionId   { get; set; } // 고유 부여 아이디값(클라와 서버에서 동일하게 가지고 있음.)
-		public float    PosX        { get; set; } 
-		public float    PosY        { get; set; } 
-		public float    PosZ        { get; set; } 
-		public float    RotationY   { get; set; } // 현재 회전값
-		public int      AnimationId { get; set; } // 현재 애니메이션
+		public override int EntityType { get; } = (int)GameRoom.Layer.Player;
 		
 		public override void OnConnected(EndPoint endPoint)
 		{
-			Console.WriteLine("OnConnected : " + SessionId);
+			Console.WriteLine("연결됨 : " + SessionId);
 			// 서버에 클라이언트가 접속을 했다면 강제로 방에 들어오게 만듬.
 			// 하지만 실제 게임에서는 클라이언트 쪽에서 모든 리소스 업데이트가 완료 되었을 때,
 			// 서버에 신호를 보내고 그때 방에 들어오는 작업을 해줘야 한다.
 			// 연결되면, 일단 연결된 클라이언트에게 정보를 요청한다.
 			// 아직 방에 들어가 있지 않기 때문에, Program.Room.Push를 통해, 작업을 수행하는게 아닌, 배정 전, 즉 방 밖에서 작업을 수행한다...
 			// ☆ 새로 들어온 클라이언트한테는 정보 요청 보내기 (바로 보내줌. 단일 세그먼트 Send 사용)
-			S_RequestPlayerState requestState = new S_RequestPlayerState(); // 패킷 생성
-			requestState.Id = SessionId;									// 자동 생성된 패킷 ID 사용
+			S_RequestNewPlayerState requestState = new S_RequestNewPlayerState(); // 패킷 생성
+			requestState.ID = SessionId;									// 자동 생성된 패킷 ID 사용
 			Send(requestState.Write());										// Session의 Send를 통해, 바로 보내주기
 		}
 		
@@ -57,11 +46,11 @@ namespace Server
 			if (Room != null)
 			{
 				GameRoom room = Room;
-				room.Push(() => room.Leave(this));
+				room.Push(() => room.EntityLeave(this));
 				Room = null;
 			}
 
-			Console.WriteLine("OnDisconnected : " + SessionId);
+			Console.WriteLine("연결 끊김 : " + SessionId);
 		}
 
 		public override void OnSend(int numOfBytes)

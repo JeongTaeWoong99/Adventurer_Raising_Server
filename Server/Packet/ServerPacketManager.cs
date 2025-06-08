@@ -34,29 +34,32 @@ public class PacketManager
 	public void Register()
 	{
 		
-		_makeFunc.Add((ushort)PacketID.C_PlayerState, MakePacket<C_PlayerState>);
-		 _handler.Add((ushort)PacketID.C_PlayerState, PacketHandler.C_PlayerStateHandler);
+		_makeFunc.Add((ushort)PacketID.C_MyState, MakePacket<C_MyState>);
+		 _handler.Add((ushort)PacketID.C_MyState, PacketHandler.C_MyStateHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_SceneChange, MakePacket<C_SceneChange>);
 		 _handler.Add((ushort)PacketID.C_SceneChange, PacketHandler.C_SceneChangeHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_PlayerLeaveGame, MakePacket<C_PlayerLeaveGame>);
-		 _handler.Add((ushort)PacketID.C_PlayerLeaveGame, PacketHandler.C_PlayerLeaveGameHandler);
+		_makeFunc.Add((ushort)PacketID.C_MyLeaveGame, MakePacket<C_MyLeaveGame>);
+		 _handler.Add((ushort)PacketID.C_MyLeaveGame, PacketHandler.C_MyLeaveGameHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_PlayerInfoChange, MakePacket<C_PlayerInfoChange>);
-		 _handler.Add((ushort)PacketID.C_PlayerInfoChange, PacketHandler.C_PlayerInfoChangeHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityInfoChange, MakePacket<C_EntityInfoChange>);
+		 _handler.Add((ushort)PacketID.C_EntityInfoChange, PacketHandler.C_EntityInfoChangeHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_Move, MakePacket<C_Move>);
-		 _handler.Add((ushort)PacketID.C_Move, PacketHandler.C_MoveHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityMove, MakePacket<C_EntityMove>);
+		 _handler.Add((ushort)PacketID.C_EntityMove, PacketHandler.C_EntityMoveHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_Rotation, MakePacket<C_Rotation>);
-		 _handler.Add((ushort)PacketID.C_Rotation, PacketHandler.C_RotationHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityRotation, MakePacket<C_EntityRotation>);
+		 _handler.Add((ushort)PacketID.C_EntityRotation, PacketHandler.C_EntityRotationHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_Animation, MakePacket<C_Animation>);
-		 _handler.Add((ushort)PacketID.C_Animation, PacketHandler.C_AnimationHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityAnimation, MakePacket<C_EntityAnimation>);
+		 _handler.Add((ushort)PacketID.C_EntityAnimation, PacketHandler.C_EntityAnimationHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_AttackAnimation, MakePacket<C_AttackAnimation>);
-		 _handler.Add((ushort)PacketID.C_AttackAnimation, PacketHandler.C_AttackAnimationHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityAttackAnimation, MakePacket<C_EntityAttackAnimation>);
+		 _handler.Add((ushort)PacketID.C_EntityAttackAnimation, PacketHandler.C_EntityAttackAnimationHandler);
+
+		_makeFunc.Add((ushort)PacketID.C_EntityAttackCheck, MakePacket<C_EntityAttackCheck>);
+		 _handler.Add((ushort)PacketID.C_EntityAttackCheck, PacketHandler.C_EntityAttackCheckHandler);
 
 	}
 	

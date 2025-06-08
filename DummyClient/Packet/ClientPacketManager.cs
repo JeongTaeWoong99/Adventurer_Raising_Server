@@ -34,32 +34,35 @@ public class PacketManager
 	public void Register()
 	{
 		
-		_makeFunc.Add((ushort)PacketID.S_RequestPlayerState, MakePacket<S_RequestPlayerState>);
-		 _handler.Add((ushort)PacketID.S_RequestPlayerState, PacketHandler.S_RequestPlayerStateHandler);
+		_makeFunc.Add((ushort)PacketID.S_RequestNewPlayerState, MakePacket<S_RequestNewPlayerState>);
+		 _handler.Add((ushort)PacketID.S_RequestNewPlayerState, PacketHandler.S_RequestNewPlayerStateHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerList, MakePacket<S_BroadcastPlayerList>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerList, PacketHandler.S_BroadcastPlayerListHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityList, MakePacket<S_BroadcastEntityList>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityList, PacketHandler.S_BroadcastEntityListHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, MakePacket<S_BroadcastPlayerEnterGame>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerEnterGame, PacketHandler.S_BroadcastPlayerEnterGameHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityEnter, MakePacket<S_BroadcastEntityEnter>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityEnter, PacketHandler.S_BroadcastEntityEnterHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, MakePacket<S_BroadcastPlayerLeaveGame>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerLeaveGame, PacketHandler.S_BroadcastPlayerLeaveGameHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityLeaveGame, MakePacket<S_BroadcastEntityLeaveGame>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityLeaveGame, PacketHandler.S_BroadcastEntityLeaveGameHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastPlayerDataChange, MakePacket<S_BroadcastPlayerDataChange>);
-		 _handler.Add((ushort)PacketID.S_BroadcastPlayerDataChange, PacketHandler.S_BroadcastPlayerDataChangeHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityInfoChange, MakePacket<S_BroadcastEntityInfoChange>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityInfoChange, PacketHandler.S_BroadcastEntityInfoChangeHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastMove, MakePacket<S_BroadcastMove>);
-		 _handler.Add((ushort)PacketID.S_BroadcastMove, PacketHandler.S_BroadcastMoveHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityMove, MakePacket<S_BroadcastEntityMove>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityMove, PacketHandler.S_BroadcastEntityMoveHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastRotation, MakePacket<S_BroadcastRotation>);
-		 _handler.Add((ushort)PacketID.S_BroadcastRotation, PacketHandler.S_BroadcastRotationHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityRotation, MakePacket<S_BroadcastEntityRotation>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityRotation, PacketHandler.S_BroadcastEntityRotationHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastAnimation, MakePacket<S_BroadcastAnimation>);
-		 _handler.Add((ushort)PacketID.S_BroadcastAnimation, PacketHandler.S_BroadcastAnimationHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAnimation, MakePacket<S_BroadcastEntityAnimation>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityAnimation, PacketHandler.S_BroadcastEntityAnimationHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastAttackAnimation, MakePacket<S_BroadcastAttackAnimation>);
-		 _handler.Add((ushort)PacketID.S_BroadcastAttackAnimation, PacketHandler.S_BroadcastAttackAnimationHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAttackAnimation, MakePacket<S_BroadcastEntityAttackAnimation>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityAttackAnimation, PacketHandler.S_BroadcastEntityAttackAnimationHandler);
+
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAttackResult, MakePacket<S_BroadcastEntityAttackResult>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityAttackResult, PacketHandler.S_BroadcastEntityAttackResultHandler);
 
 	}
 	

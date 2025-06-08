@@ -15,13 +15,13 @@ namespace Server
 		
 		// 티켓 아이디
 		int _sessionId = 0;																 // 고유한 세션 아이디
-		Dictionary<int, ClientSession> _sessions = new Dictionary<int, ClientSession>(); // 여러개 존재
+		Dictionary<int, CommonSession> _sessions = new Dictionary<int, CommonSession>(); // 모든 세션(클라/오브젝트/몬스터)
 		
 		// 새로 서버에 접속한 클라이언트를 관리해줄, ClientSession(대리자)를 만들어주는 메서드.
 		// Session 생성 및 ID 발급
 		// _lock통해, 고유한 세션이 만들어짐. =>  ClientSession을 리턴함.
 		// _listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });에서 등록되고, 만들어짐.
-		public ClientSession Generate()
+		public ClientSession ClientSessionGenerate()
 		{
 			lock (_lock)
 			{
@@ -30,24 +30,54 @@ namespace Server
 				ClientSession session = new ClientSession();
 				session.SessionId = sessionId;
 				_sessions.Add(sessionId, session);
-
-				//Console.WriteLine($"서버에 접속 : {sessionId}");
 				
 				return session;
 			}
 		}
 		
-		public ClientSession Find(int id)
+		// 오브젝트 세션 생성
+		public ObjectSession ObjectSessionGenerate()
 		{
 			lock (_lock)
 			{
-				ClientSession session = null;
+				int sessionId = ++_sessionId;
+
+				ObjectSession session = new ObjectSession();
+				session.SessionId = sessionId;
+				_sessions.Add(sessionId, session);
+				
+				return session;
+			}
+		}
+		
+		// 몬스터 세션 생성
+		public MonsterSession MonsterSessionGenerate()
+		{
+			lock (_lock)
+			{
+				int sessionId = ++_sessionId;
+
+				MonsterSession session = new MonsterSession();
+				session.SessionId = sessionId;
+				_sessions.Add(sessionId, session);
+				
+				return session;
+			}
+		}
+		
+		// 찾기
+		public CommonSession Find(int id)
+		{
+			lock (_lock)
+			{
+				CommonSession session = null;
 				_sessions.TryGetValue(id, out session);
 				return session;
 			}
 		}
 		
-		public void Remove(ClientSession session)
+		// 제거
+		public void Remove(CommonSession session)
 		{
 			lock (_lock)
 			{

@@ -43,16 +43,16 @@ namespace Server
 			// 서버는 문지기가 필요.....
 			// 클라가 서버에 접속을 성공하면, 서버에서 클라를 관리해줄 ClientSession을 만들어주는
 			// SessionManager.Instance.Generate();를 콜백 함수로 등록.
-			_listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });
+			_listener.Init(endPoint, () => { return SessionManager.Instance.ClientSessionGenerate(); });
 			Console.WriteLine("Listening...");
 			
 			// 무한 루프 작업 스타트
-			JobTimer.Instance.Push(FlushRoom);
+			JobTimer.Instance.Push(FlushRoom,0);
 			
 			// 무한 루프
 			while (true)
 			{
-				JobTimer.Instance.Flush();
+				JobTimer.Instance.	Flush();
 			}
 			
 			// FlushRoom 작업 등록 (250ms 간격) ←

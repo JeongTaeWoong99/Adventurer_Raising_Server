@@ -1,0 +1,64 @@
+{
+  "objectAndMonsterInfos": [
+    {
+      "nickName": "Dummy",
+      "maxHp": "250",
+      "attack": "0",
+      "moveSpeed": "0",
+      "b_Type": "Capsule",
+      "b_Size": "0.5 / 0.0 / 0.5",
+      "ab_Size": "0.0 / 0.0 / 0.0",
+      "serialNumber": "O000",
+      "dropExp": "0",
+      "invincibility": "FALSE",
+      "find_Radius": "0",
+      "attack1_Length": "0",
+      "attack1_Timing": "0"
+    },
+    {
+      "nickName": "Spike Trap",
+      "maxHp": "9999",
+      "attack": "100",
+      "moveSpeed": "0",
+      "b_Type": "Box",
+      "b_Size": "0.0 / 0.0 / 0.0",
+      "ab_Size": "1.5 / 1.5 / 1.5",
+      "serialNumber": "O001",
+      "dropExp": "0",
+      "invincibility": "TRUE",
+      "find_Radius": "0",
+      "attack1_Length": "1",
+      "attack1_Timing": "0.33"
+    },
+    {
+      "nickName": "Warrior",
+      "maxHp": "200",
+      "attack": "40",
+      "moveSpeed": "4",
+      "b_Type": "Capsule",
+      "b_Size": "0.3 / 0.0 / 0.3",
+      "ab_Size": "1.0 / 1.0 / 1.0",
+      "serialNumber": "M001",
+      "dropExp": "40",
+      "invincibility": "FALSE",
+      "find_Radius": "5",
+      "attack1_Length": "미정",
+      "attack1_Timing": "미정"
+    },
+    {
+      "nickName": "Knight",
+      "maxHp": "100",
+      "attack": "20",
+      "moveSpeed": "5",
+      "b_Type": "Capsule",
+      "b_Size": "0.3 / 0.0 / 0.3",
+      "ab_Size": "1.0 / 1.0 / 1.0",
+      "serialNumber": "M000",
+      "dropExp": "20",
+      "invincibility": "FALSE",
+      "find_Radius": "5",
+      "attack1_Length": "미정",
+      "attack1_Timing": "미정"
+    }
+  ]
+}

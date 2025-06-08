@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Numerics;
 using Server;
 using ServerCore;
@@ -11,13 +10,13 @@ using ServerCore;
 // 해야할 일을 JobQueue에 넣어주고 하나씩 뽑아서 처리를 하는 방식으로 변경함.
 class PacketHandler
 {
+	# region ===== 관리 영역 =====
 	// 클라이언트 쪽에서 나가고 싶다는 패킷을 명시적으로 보냈을 때, 알아서 나갈 수 있도록 해준다.
 	// 클라쪽에서 명시적으로 나가지 않고,강제종료된 경우는
 	// ClientSession.cs의 OnDisconnected에서 감지 후, 방에서 나가게 한다.
-
-	public static void C_PlayerStateHandler(PacketSession session, IPacket packet)
+	public static void C_MyStateHandler(PacketSession session, IPacket packet)
 	{
-		C_PlayerState playerStatePacket = packet  as C_PlayerState;
+		C_MyState playerStatePacket = packet  as C_MyState;
 		ClientSession clientSession     = session as ClientSession;
 
 		// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
@@ -36,6 +35,7 @@ class PacketHandler
 		clientSession.Room = targetRoom;
 		
 		// 기본정보 세팅
+		clientSession.serialNumber = playerStatePacket.serialNumber;
 		clientSession.nickname     = playerStatePacket.nickname;
 		clientSession.currentHP    = playerStatePacket.currentHp;
 		clientSession.currentLevel = playerStatePacket.currentLevel;
@@ -47,11 +47,11 @@ class PacketHandler
 		
 		// 원래 enter 및 list 작업이 이루어지도록 하기...
 		// 해당 룸에서 Enter작업이 실행되기 때문에, 해당 방에 있는 플레이어들에게만 Enter 및 List 작업이 실행됨...
-		targetRoom._sessions.Add(clientSession);
-		targetRoom.Push(() => targetRoom.Enter(clientSession));
+		targetRoom._commonSessions.Add(clientSession);
+		targetRoom.Push(() => targetRoom.NewPlayerEnter(clientSession));
 	}
 	
-	public static void C_PlayerLeaveGameHandler(PacketSession session, IPacket packet)
+	public static void C_MyLeaveGameHandler(PacketSession session, IPacket packet)
 	{
 		ClientSession clientSession = session as ClientSession;
 
@@ -59,19 +59,19 @@ class PacketHandler
 			return;
 		
 		GameRoom room = clientSession.Room;
-		room.Push(() => room.Leave(clientSession));
+		room.Push(() => room.EntityLeave(clientSession));
 	}
 	
-	public static void C_PlayerInfoChangeHandler(PacketSession session, IPacket packet)
+	public static void C_EntityInfoChangeHandler(PacketSession session, IPacket packet)
 	{
-		C_PlayerInfoChange  playerInfoChange = packet  as C_PlayerInfoChange;
+		C_EntityInfoChange  playerInfoChange = packet  as C_EntityInfoChange;
 		ClientSession       clientSession    = session as ClientSession;
 
 		if (clientSession.Room == null)
 			return;
 		
 		GameRoom room = clientSession.Room;
-		room.Push(() => room.PlayerInfoChange(clientSession, playerInfoChange));
+		room.Push(() => room.EntityInfoChange(clientSession, playerInfoChange));
 	}
 	
 	public static void C_SceneChangeHandler(PacketSession session, IPacket packet)
@@ -94,55 +94,62 @@ class PacketHandler
 		clientSession.Room = targetRoom;
 		
 		// 동일하게 옮겨간 방에서 Enter 및 List 진행
-		targetRoom._sessions.Add(clientSession);
-		targetRoom.Push(() => targetRoom.Enter(clientSession));
+		targetRoom._commonSessions.Add(clientSession);
+		targetRoom.Push(() => targetRoom.NewPlayerEnter(clientSession));
 	}
 
-	public static void C_MoveHandler(PacketSession session, IPacket packet)
+	#endregion	
+	
+	# region ===== 조작 영역 =====
+	public static void C_EntityMoveHandler(PacketSession session, IPacket packet)
 	{
-		C_Move        movePacket    = packet  as C_Move;
-		ClientSession clientSession = session as ClientSession;
+		C_EntityMove movePacket = packet as C_EntityMove;
 
-		if (clientSession.Room == null)
-			return;
-		
-		GameRoom room = clientSession.Room;
-		room.Push(() => room.Move(clientSession, movePacket));
+		if (session is CommonSession gameObjectSession && gameObjectSession.Room != null)
+		{
+			GameRoom room = gameObjectSession.Room;
+			room.Push(() => room.Move(gameObjectSession, movePacket));
+		}
 	}
 	
-	public static void C_RotationHandler(PacketSession session, IPacket packet)
+	public static void C_EntityRotationHandler(PacketSession session, IPacket packet)
 	{
-		C_Rotation    rotationPacket = packet  as C_Rotation;
-		ClientSession clientSession  = session as ClientSession;
-
-		if (clientSession.Room == null)
-			return;
-		
-		GameRoom room = clientSession.Room;
-		room.Push(() => room.Rotation(clientSession, rotationPacket));
+		C_EntityRotation rotationPacket = packet as C_EntityRotation;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.Rotation(commonSession, rotationPacket));
+		}
 	}
 	
-	public static void C_AnimationHandler(PacketSession session, IPacket packet)
+	public static void C_EntityAnimationHandler(PacketSession session, IPacket packet)
 	{
-		C_Animation   animePacket   = packet  as C_Animation;
-		ClientSession clientSession = session as ClientSession;
-
-		if (clientSession.Room == null)
-			return;
-		
-		GameRoom room = clientSession.Room;
-		room.Push(() => room.Animation(clientSession, animePacket));
+		C_EntityAnimation animePacket = packet as C_EntityAnimation;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.Animation(commonSession, animePacket));
+		}
 	}
 	
-	public static void C_AttackAnimationHandler(PacketSession session, IPacket packet)
+	public static void C_EntityAttackAnimationHandler(PacketSession session, IPacket packet)
 	{
-		C_AttackAnimation attackAnimationPacket = packet  as C_AttackAnimation;
-		ClientSession     clientSession         = session as ClientSession;
-
-		if (clientSession.Room == null)
-			return;
-		
-		GameRoom room = clientSession.Room;
-		room.Push(() => room.AttackAnimation(clientSession, attackAnimationPacket));
+		C_EntityAttackAnimation attackAnimationPacket = packet as C_EntityAttackAnimation;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.AttackAnimation(commonSession, attackAnimationPacket));
+		}
 	}
+	
+	public static void C_EntityAttackCheckHandler(PacketSession session, IPacket packet)
+	{
+		C_EntityAttackCheck attackAnimationPacket = packet as C_EntityAttackCheck;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.AttackCheckToAttackResult(commonSession, attackAnimationPacket));
+		}
+	}
+	#endregion	
 }
