@@ -40,8 +40,8 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.C_SceneChange, MakePacket<C_SceneChange>);
 		 _handler.Add((ushort)PacketID.C_SceneChange, PacketHandler.C_SceneChangeHandler);
 
-		_makeFunc.Add((ushort)PacketID.C_MyLeaveGame, MakePacket<C_MyLeaveGame>);
-		 _handler.Add((ushort)PacketID.C_MyLeaveGame, PacketHandler.C_MyLeaveGameHandler);
+		_makeFunc.Add((ushort)PacketID.C_EntityLeave, MakePacket<C_EntityLeave>);
+		 _handler.Add((ushort)PacketID.C_EntityLeave, PacketHandler.C_EntityLeaveHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_EntityInfoChange, MakePacket<C_EntityInfoChange>);
 		 _handler.Add((ushort)PacketID.C_EntityInfoChange, PacketHandler.C_EntityInfoChangeHandler);

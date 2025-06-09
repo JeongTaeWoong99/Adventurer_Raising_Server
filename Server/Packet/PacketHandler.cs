@@ -17,7 +17,7 @@ class PacketHandler
 	public static void C_MyStateHandler(PacketSession session, IPacket packet)
 	{
 		C_MyState playerStatePacket = packet  as C_MyState;
-		ClientSession clientSession     = session as ClientSession;
+		ClientSession clientSession = session as ClientSession;
 
 		// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
 		string   targetSceneName = playerStatePacket.savedScene;
@@ -51,27 +51,28 @@ class PacketHandler
 		targetRoom.Push(() => targetRoom.NewPlayerEnter(clientSession));
 	}
 	
-	public static void C_MyLeaveGameHandler(PacketSession session, IPacket packet)
+	public static void C_EntityLeaveHandler(PacketSession session, IPacket packet)
 	{
+		C_EntityLeave leave         = packet  as C_EntityLeave;
 		ClientSession clientSession = session as ClientSession;
 
 		if (clientSession.Room == null)
 			return;
 		
 		GameRoom room = clientSession.Room;
-		room.Push(() => room.EntityLeave(clientSession));
+		room.Push(() => room.EntityLeave(clientSession,leave));
 	}
 	
 	public static void C_EntityInfoChangeHandler(PacketSession session, IPacket packet)
 	{
-		C_EntityInfoChange  playerInfoChange = packet  as C_EntityInfoChange;
+		C_EntityInfoChange  entityInfoChange = packet  as C_EntityInfoChange;
 		ClientSession       clientSession    = session as ClientSession;
 
 		if (clientSession.Room == null)
 			return;
 		
 		GameRoom room = clientSession.Room;
-		room.Push(() => room.EntityInfoChange(clientSession, playerInfoChange));
+		room.Push(() => room.EntityInfoChange(clientSession, entityInfoChange));
 	}
 	
 	public static void C_SceneChangeHandler(PacketSession session, IPacket packet)

@@ -43,8 +43,8 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityEnter, MakePacket<S_BroadcastEntityEnter>);
 		 _handler.Add((ushort)PacketID.S_BroadcastEntityEnter, PacketHandler.S_BroadcastEntityEnterHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityLeaveGame, MakePacket<S_BroadcastEntityLeaveGame>);
-		 _handler.Add((ushort)PacketID.S_BroadcastEntityLeaveGame, PacketHandler.S_BroadcastEntityLeaveGameHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityLeave, MakePacket<S_BroadcastEntityLeave>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityLeave, PacketHandler.S_BroadcastEntityLeaveHandler);
 
 		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityInfoChange, MakePacket<S_BroadcastEntityInfoChange>);
 		 _handler.Add((ushort)PacketID.S_BroadcastEntityInfoChange, PacketHandler.S_BroadcastEntityInfoChangeHandler);

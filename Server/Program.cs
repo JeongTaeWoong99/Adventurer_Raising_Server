@@ -33,8 +33,11 @@ namespace Server
 				@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json"  // 서비스 계정 키 파일 경로
 			);
 			await downloader.DownloadAllAsync();
+			
+			// 다운로드된 데이터를 기반으로, 모든 씬의 몬스터 및 오브젝트 스폰
+			SpawnManager.Instance.SpawnAllEntities();
 		
-			// 기본 설정
+			// 서버 작업 진행
 			string      host     = Dns.GetHostName();   		  // DNS (Domain Name System)
 			IPHostEntry ipHost   = Dns.GetHostEntry(host);
 			IPAddress   ipAddr   = ipHost.AddressList[0];
@@ -52,7 +55,7 @@ namespace Server
 			// 무한 루프
 			while (true)
 			{
-				JobTimer.Instance.	Flush();
+				JobTimer.Instance.Flush();
 			}
 			
 			// FlushRoom 작업 등록 (250ms 간격) ←

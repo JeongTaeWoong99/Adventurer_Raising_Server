@@ -111,11 +111,11 @@ public class FirebaseDataDownloader
         };
         await Task.WhenAll(tasks);
         
-        // 최신 정보를 바탕으로, Room 만들어주기
-        await CreateGameRoomsBasedOnSceneData();
-            
-        // 최신 정보를 바탕으로, Room에 오브젝트 세팅
-        await CreateObjectAndMonsterBasedOnSceneData();
+        // 룸 세팅
+        CreateGameRoomsBasedOnSceneData();
+        
+        // 씬 오브젝트 + 몬스터 세팅
+        LoadSpawnData();
         
         Console.WriteLine("DB 세팅 완료!");
     }
@@ -186,7 +186,7 @@ public class FirebaseDataDownloader
         Console.WriteLine($"✅ Firestore '{collectionName}' → JSON 저장 완료: {path}");
     }
     
-    private Task CreateGameRoomsBasedOnSceneData()
+    private void CreateGameRoomsBasedOnSceneData()
     {
         string filePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "NetworkRoomSceneData.json"); 
         if (File.Exists(filePath))
@@ -231,139 +231,28 @@ public class FirebaseDataDownloader
         {
             Console.WriteLine($"Error: NetworkRoomSceneData.json 파일을 찾을 수 없습니다. 경로: {filePath}");
         }
-
-        return Task.CompletedTask;
     }
 
-    private Task CreateObjectAndMonsterBasedOnSceneData()
+    private void LoadSpawnData()
     {
-        // -------------------------------------------------- 정보 데이터 로드 --------------------------------------------------
-        // 오브젝트 + 몬스터 정보
-        string objectAndMonsterInfoDataFilePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectAndMonsterInfoData.json");
-        string objectAndMonsterDataJsonData = File.ReadAllText(objectAndMonsterInfoDataFilePath);
-        ObjectAndMonsterList objectAndObjectAndMonsterDataList = JsonConvert.DeserializeObject<ObjectAndMonsterList>(objectAndMonsterDataJsonData);
-        Dictionary<string, ObjectAndMonsterInfoData> objectAndMonsterInfoDict = objectAndObjectAndMonsterDataList.objectAndMonsterInfos.ToDictionary(info => info.serialNumber);
-
-        // 몬스터 정보
-        // string monsterInfoDataFilePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "MonsterInfoData.json");
-        // string monsterDataJsonData = File.ReadAllText(monsterInfoDataFilePath);
-        // MonsterAndObjectList monsterDataList = JsonConvert.DeserializeObject<MonsterAndObjectList>(monsterDataJsonData);
-        // Dictionary<string, ObjectAndMonsterInfoData> monsterInfoDict = monsterDataList.monsterAndObjectInfos.ToDictionary(info => info.serialNumber);
+        // -------------------------------------------------- 스폰 데이터 로드 및 SpawnManager 초기화 --------------------------------------------------
         
-        // -------------------------------------------------- 오브젝트 생성 --------------------------------------------------
-        string objectFilePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectSceneSettingData.json");
-        if (File.Exists(objectFilePath))
-        {
-            string objectJsonData = File.ReadAllText(objectFilePath);
-            ObjectSceneSettingList objectSceneListData = JsonConvert.DeserializeObject<ObjectSceneSettingList>(objectJsonData);
+        // 엔티티 공통 정보
+        string entityInfoPath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectAndMonsterInfoData.json");
+        string entityInfoJson = File.ReadAllText(entityInfoPath);
+        ObjectAndMonsterList entityInfoList = JsonConvert.DeserializeObject<ObjectAndMonsterList>(entityInfoJson);
 
-            if (objectSceneListData != null && objectSceneListData.objectSceneSettingInfos != null)
-            {
-                foreach (ObjectSceneSettingData objectData in objectSceneListData.objectSceneSettingInfos)
-                {
-                    if (Program.GameRooms.TryGetValue(objectData.sceneName, out GameRoom room)) // 생성 방 찾기
-                    {
-                        // 오브젝트 씬 세팅에 해당하는 정보 세팅
-                        var newSession = SessionManager.Instance.ObjectSessionGenerate();   // 클론 생성
-                         
-                        newSession.serialNumber = objectData.serialNumber;                  // 시리얼넘버 세팅
-                        
-                        Vector3 spawnPos = Extension.ParseVector3(objectData.makePos);      // 고정 생성 위치 세팅
-                        newSession.PosX = spawnPos.X;                                       
-                        newSession.PosY = spawnPos.Y;
-                        newSession.PosZ = spawnPos.Z;
-                         
-                        newSession.Room = room;                                             // 해당 방 세팅
-                        room._commonSessions.Add(newSession);                               // 해당 방에 넣어주기
-                        
-                        // 시리얼 넘버에 해당하는 정보 세팅
-                        if (objectAndMonsterInfoDict.TryGetValue(objectData.serialNumber, out ObjectAndMonsterInfoData info))
-                        {
-                            newSession.nickname = info.nickName;
-                            if (int.TryParse(info.maxHp, out int maxHp))
-                                newSession.currentHP = maxHp;
-                            if (bool.TryParse(info.invincibility, out bool invincibility)) // 무적 상태는 설정해 주어야 한다.
-                                newSession.Invincibility = invincibility;
-                        }
-                        
-                        newSession.OnConnected(new IPEndPoint(IPAddress.Loopback, 7777)); // 연결 완료 피드백
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Error: Scene '{objectData.sceneName}' not found for object with serial '{objectData.serialNumber}'.");
-                    }
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Error: ObjectSceneSettingData.json 파일 내용이 올바르지 않거나 비어있습니다. ({objectFilePath})");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Error: ObjectSceneSettingData.json 파일을 찾을 수 없습니다. 경로: {objectFilePath}");
-        }
-        
-        // -------------------------------------------------- 몬스터 생성 --------------------------------------------------
-        // string monsterFilePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "MonsterSceneSettingData.json");
-        // if (File.Exists(monsterFilePath))
-        // {
-        //     string monsterJsonData = File.ReadAllText(monsterFilePath);
-        //     MonsterSceneSettingList monsterSceneListData = JsonConvert.DeserializeObject<MonsterSceneSettingList>(monsterJsonData);
-        //     Random rand = new Random(); // 스폰 랜덤 위치
-        //
-        //     if (monsterSceneListData != null && monsterSceneListData.monsterSceneSettingInfos != null)
-        //     {
-        //         foreach (MonsterSceneSettingData monsterData in monsterSceneListData.monsterSceneSettingInfos) 
-        //         {
-        //             if (Program.GameRooms.TryGetValue(monsterData.sceneName, out GameRoom room)) // 생성 방 찾기
-        //             {
-        //                 if(int.TryParse(monsterData.spawnNumber, out int spawnCount))   // 스폰 넘버 만큼 반복
-        //                 {
-        //                     for (int i = 0; i < spawnCount; i++)
-        //                     {
-        //                         // 몬스터 씬 세팅에 해당하는 정보 세팅
-        //                         var newSession = SessionManager.Instance.MonsterSessionGenerate();  // 클론 생성
-        //                          
-        //                         newSession.serialNumber = monsterData.serialNumber;                 // 시리얼넘버 세팅
-        //                         
-        //                         Vector3 spawnPos = Extension.ParseVector3(monsterData.makePos);     // 고정 생성 위치 세팅
-        //              
-        //                         if (float.TryParse(monsterData.makeRadius, out float radius))       // 고정 위치에다가, 랜덤 radius를 더해준다.
-        //                         {                                                                   
-        //                             double angle = rand.NextDouble() * 2 * Math.PI;
-        //                             double r = radius * Math.Sqrt(rand.NextDouble());
-        //                              
-        //                             newSession.PosX = spawnPos.X + (float)(r * Math.Cos(angle));    // 중심 X + 랜덤 X
-        //                             newSession.PosY = spawnPos.Y;                                   // 기본
-        //                             newSession.PosZ = spawnPos.Z + (float)(r * Math.Sin(angle));    // 중심 Z + 랜덤 Z
-        //                         }
-        //                          
-        //                         newSession.Room = room;                                             // 해당 방 세팅
-        //                         room._commonSessions.Add(newSession);                               // 해당 방에 넣어주기
-        //                         
-        //                         // 시리얼 넘버에 해당하는 정보 세팅
-        //                         if (monsterInfoDict.TryGetValue(monsterData.serialNumber, out MonsterAndObjectInfoData info))
-        //                         {
-        //                             newSession.nickname = info.nickName;
-        //                             if (int.TryParse(info.maxHp, out int hp))
-        //                                 newSession.currentHP = hp;
-        //                         }
-        //                         
-        //                         newSession.OnConnected(new IPEndPoint(IPAddress.Loopback, 7777));  // 연결 완료 피드백
-        //                     }
-        //                 }
-        //             }
-        //             else
-        //                 Console.WriteLine($"Error: Scene '{monsterData.sceneName}' not found for monster with serial '{monsterData.serialNumber}'.");
-        //         }
-        //     }
-        //     else
-        //         Console.WriteLine($"Error: MonsterSceneSettingData.json 파일 내용이 올바르지 않거나 비어있습니다. ({monsterFilePath})");
-        // }
-        // else
-        //     Console.WriteLine($"Error: MonsterSceneSettingData.json 파일을 찾을 수 없습니다. 경로: {monsterFilePath}");
+        // 오브젝트 씬 정보
+        string objectScenePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectSceneSettingData.json");
+        string objectSceneJson = File.ReadAllText(objectScenePath);
+        ObjectSceneSettingList objectSceneList = JsonConvert.DeserializeObject<ObjectSceneSettingList>(objectSceneJson);
 
-        return Task.CompletedTask;
+        // 몬스터 씬 정보
+        string monsterScenePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "MonsterSceneSettingData.json");
+        string monsterSceneJson = File.ReadAllText(monsterScenePath);
+        MonsterSceneSettingList monsterSceneList = JsonConvert.DeserializeObject<MonsterSceneSettingList>(monsterSceneJson);
+
+        // SpawnManager에 로드한 데이터를 전달하여 초기화
+        SpawnManager.Instance.Init(entityInfoList.objectAndMonsterInfos, objectSceneList.objectSceneSettingInfos, monsterSceneList.monsterSceneSettingInfos);
     }
 }

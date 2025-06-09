@@ -82,19 +82,20 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <!-- 클라이언트 전용 -->
-    <packet name = "C_MyLeaveGame">
+    <packet name = "C_EntityLeave">
+        <string name = "toSceneName"/>
     </packet>
 
     <!-- 엔티티 공통 전용 -->
-    <packet name = "S_BroadcastEntityLeaveGame">
-        <int name = "ID"/>
-        <int name = "entityType"/>
+    <packet name = "S_BroadcastEntityLeave">
+        <int    name = "ID"/>
+        <int    name = "entityType"/>
+        <string name = "toSceneName"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_EntityInfoChange">
-        <int   name   = "entityType"/>
         <int   name   = "currentLevel"/>
         <int   name   = "currentHp"/>
         <bool  name   = "invincibility"/>
@@ -111,7 +112,6 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_EntityMove">
-      <int   name = "entityType"/>
       <float name = "posX"/>
       <float name = "posY"/>
       <float name = "posZ"/>
@@ -128,7 +128,6 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       
     <packet name = "C_EntityRotation">
-        <int   name = "entityType"/>
         <float name = "rotationY"/>
     </packet>
 
@@ -141,7 +140,6 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_EntityAnimation">
-      <int name = "entityType"/>
       <int name = "animationID"/>
     </packet>
       
@@ -154,7 +152,6 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_EntityAttackAnimation">
-        <int   name = "entityType"/>
         <int   name = "animationID"/>
         <int   name = "attackAnimeNumID"/>
         <float name = "posX"/>
@@ -176,7 +173,6 @@
 
     <!-- 1개의 단일 공격에 대해서, 체크 -->
     <packet name = "C_EntityAttackCheck">
-        <int   name = "entityType"/>
         <float name = "posX"/>
         <float name = "posY"/>
         <float name = "posZ"/>

@@ -16,8 +16,8 @@ public enum PacketID
 	S_BroadcastEntityList = 1003,
 	S_BroadcastEntityEnter = 1004,
 	C_SceneChange = 1005,
-	C_MyLeaveGame = 1006,
-	S_BroadcastEntityLeaveGame = 1007,
+	C_EntityLeave = 1006,
+	S_BroadcastEntityLeave = 1007,
 	C_EntityInfoChange = 1008,
 	S_BroadcastEntityInfoChange = 1009,
 	C_EntityMove = 1010,
@@ -416,18 +416,21 @@ public class C_SceneChange : IPacket
 		return SendBufferHelper.Close(count);
 	}
 }
-public class C_MyLeaveGame : IPacket
+public class C_EntityLeave : IPacket
 {
-	
+	public string toSceneName;
 
-	public ushort Protocol { get { return (ushort)PacketID.C_MyLeaveGame; } }
+	public ushort Protocol { get { return (ushort)PacketID.C_EntityLeave; } }
 
 	public void Read(ArraySegment<byte> segment)
 	{
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		
+		ushort toSceneNameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.toSceneName = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, toSceneNameLen);
+		count += toSceneNameLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -436,21 +439,25 @@ public class C_MyLeaveGame : IPacket
 		ushort count = 0;
 
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_MyLeaveGame), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityLeave), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		
+		ushort toSceneNameLen = (ushort)Encoding.Unicode.GetBytes(this.toSceneName, 0, this.toSceneName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(toSceneNameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += toSceneNameLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
 		return SendBufferHelper.Close(count);
 	}
 }
-public class S_BroadcastEntityLeaveGame : IPacket
+public class S_BroadcastEntityLeave : IPacket
 {
 	public int ID;
 	public int entityType;
+	public string toSceneName;
 
-	public ushort Protocol { get { return (ushort)PacketID.S_BroadcastEntityLeaveGame; } }
+	public ushort Protocol { get { return (ushort)PacketID.S_BroadcastEntityLeave; } }
 
 	public void Read(ArraySegment<byte> segment)
 	{
@@ -461,6 +468,10 @@ public class S_BroadcastEntityLeaveGame : IPacket
 		count += sizeof(int);
 		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		ushort toSceneNameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.toSceneName = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, toSceneNameLen);
+		count += toSceneNameLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -469,12 +480,16 @@ public class S_BroadcastEntityLeaveGame : IPacket
 		ushort count = 0;
 
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_BroadcastEntityLeaveGame), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_BroadcastEntityLeave), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes(this.ID), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		ushort toSceneNameLen = (ushort)Encoding.Unicode.GetBytes(this.toSceneName, 0, this.toSceneName.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(toSceneNameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += toSceneNameLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -483,7 +498,6 @@ public class S_BroadcastEntityLeaveGame : IPacket
 }
 public class C_EntityInfoChange : IPacket
 {
-	public int entityType;
 	public int currentLevel;
 	public int currentHp;
 	public bool invincibility;
@@ -495,8 +509,6 @@ public class C_EntityInfoChange : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.currentLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.currentHp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
@@ -513,8 +525,6 @@ public class C_EntityInfoChange : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityInfoChange), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.currentLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.currentHp), 0, segment.Array, segment.Offset + count, sizeof(int));
@@ -580,7 +590,6 @@ public class S_BroadcastEntityInfoChange : IPacket
 }
 public class C_EntityMove : IPacket
 {
-	public int entityType;
 	public float posX;
 	public float posY;
 	public float posZ;
@@ -592,8 +601,6 @@ public class C_EntityMove : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.posX = BitConverter.ToSingle(segment.Array, segment.Offset + count);
 		count += sizeof(float);
 		this.posY = BitConverter.ToSingle(segment.Array, segment.Offset + count);
@@ -610,8 +617,6 @@ public class C_EntityMove : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityMove), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.posX), 0, segment.Array, segment.Offset + count, sizeof(float));
 		count += sizeof(float);
 		Array.Copy(BitConverter.GetBytes(this.posY), 0, segment.Array, segment.Offset + count, sizeof(float));
@@ -677,7 +682,6 @@ public class S_BroadcastEntityMove : IPacket
 }
 public class C_EntityRotation : IPacket
 {
-	public int entityType;
 	public float rotationY;
 
 	public ushort Protocol { get { return (ushort)PacketID.C_EntityRotation; } }
@@ -687,8 +691,6 @@ public class C_EntityRotation : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.rotationY = BitConverter.ToSingle(segment.Array, segment.Offset + count);
 		count += sizeof(float);
 	}
@@ -701,8 +703,6 @@ public class C_EntityRotation : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityRotation), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.rotationY), 0, segment.Array, segment.Offset + count, sizeof(float));
 		count += sizeof(float);
 
@@ -754,7 +754,6 @@ public class S_BroadcastEntityRotation : IPacket
 }
 public class C_EntityAnimation : IPacket
 {
-	public int entityType;
 	public int animationID;
 
 	public ushort Protocol { get { return (ushort)PacketID.C_EntityAnimation; } }
@@ -764,8 +763,6 @@ public class C_EntityAnimation : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.animationID = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 	}
@@ -778,8 +775,6 @@ public class C_EntityAnimation : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityAnimation), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.animationID), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
@@ -831,7 +826,6 @@ public class S_BroadcastEntityAnimation : IPacket
 }
 public class C_EntityAttackAnimation : IPacket
 {
-	public int entityType;
 	public int animationID;
 	public int attackAnimeNumID;
 	public float posX;
@@ -845,8 +839,6 @@ public class C_EntityAttackAnimation : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.animationID = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.attackAnimeNumID = BitConverter.ToInt32(segment.Array, segment.Offset + count);
@@ -867,8 +859,6 @@ public class C_EntityAttackAnimation : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityAttackAnimation), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.animationID), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.attackAnimeNumID), 0, segment.Array, segment.Offset + count, sizeof(int));
@@ -948,7 +938,6 @@ public class S_BroadcastEntityAttackAnimation : IPacket
 }
 public class C_EntityAttackCheck : IPacket
 {
-	public int entityType;
 	public float posX;
 	public float posY;
 	public float posZ;
@@ -965,8 +954,6 @@ public class C_EntityAttackCheck : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
 		this.posX = BitConverter.ToSingle(segment.Array, segment.Offset + count);
 		count += sizeof(float);
 		this.posY = BitConverter.ToSingle(segment.Array, segment.Offset + count);
@@ -993,8 +980,6 @@ public class C_EntityAttackCheck : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EntityAttackCheck), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.posX), 0, segment.Array, segment.Offset + count, sizeof(float));
 		count += sizeof(float);
 		Array.Copy(BitConverter.GetBytes(this.posY), 0, segment.Array, segment.Offset + count, sizeof(float));

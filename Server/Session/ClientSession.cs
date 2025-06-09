@@ -42,15 +42,16 @@ namespace Server
 		// ClientSession.cs의 OnDisconnected에서 감지 후, 방에서 나가게 한다.
 		public override void OnDisconnected(EndPoint endPoint)
 		{
+			Console.WriteLine("연결 끊김 : " + SessionId);
 			SessionManager.Instance.Remove(this);
 			if (Room != null)
 			{
 				GameRoom room = Room;
-				room.Push(() => room.EntityLeave(this));
+				C_EntityLeave dummyPtk = new C_EntityLeave();
+				dummyPtk.toSceneName = "사용X(명시용)";
+				room.Push(() => room.EntityLeave(this, dummyPtk));
 				Room = null;
 			}
-
-			Console.WriteLine("연결 끊김 : " + SessionId);
 		}
 
 		public override void OnSend(int numOfBytes)

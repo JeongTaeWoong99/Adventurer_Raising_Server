@@ -54,8 +54,8 @@ namespace Server
 		{
 			// ☆ ServerSession/ClientSession <- PacketSession <- Session
 			// ☆ 클라이언트 각자의 ClientSession, 즉 ServerCore의 Session의 Send에서 처리.
-			foreach (ClientSession s in _commonSessions.OfType<ClientSession>())
-				s.Send(_pendingList); // 다중 세그먼트 Send를 통해, _pendingList에 들어가 있는 모든 세그먼트 작업들을 보냄.
+			foreach (ClientSession c in _commonSessions.OfType<ClientSession>())
+				c.Send(_pendingList); // 다중 세그먼트 Send를 통해, _pendingList에 들어가 있는 모든 세그먼트 작업들을 보냄.
 			
 			_pendingList.Clear();
 		}
@@ -77,7 +77,7 @@ namespace Server
 		// 같은 GameRoom 상태를 패킷으로 공유하고 있다....
 		public void NewPlayerEnter(ClientSession session)
 		{
-			// ☆ 새로 들어온 클라이언트한테는 모든 세션 목록 전송. => 플레이어 / 오브젝트 / 몬스터 모두 다
+			// ☆ 새로 들어온 클라이언트(=나)한테는 모든 세션 목록 전송. => 플레이어 / 오브젝트 / 몬스터 모두
 			S_BroadcastEntityList entityList = new S_BroadcastEntityList();
 			foreach (CommonSession s in _commonSessions)
 			{
@@ -121,24 +121,37 @@ namespace Server
 			enter.posX        = session.PosX;	// DB에 저장된 정보를 앞서 받아와서 세팅!
 			enter.posY        = session.PosY;	// DB에 저장된 정보를 앞서 받아와서 세팅!
 			enter.posZ        = session.PosZ;	// DB에 저장된 정보를 앞서 받아와서 세팅!
-			enter.rotationY   = 180f;
-			enter.animationID = 0;
+			enter.rotationY   = session.RotationY;
+			enter.animationID = session.AnimationId;
 			Broadcast(enter.Write()); // 모든 클라에게 보내주기 위해서,
 											 // Broadcast를 통해, _pendingList에 등록하고,
 											 // 순차적으로 보내줌.(다중 세그먼트 Send 사용)
 		}
 
 		// 엔티티를 방에서 제거하고, 다른 클라이언트에게 알리기
-		public void EntityLeave(CommonSession session)
+		public void EntityLeave(CommonSession session, C_EntityLeave leave)
 		{
-			// 엔티티 방에서 제거
-			_commonSessions.Remove(session);
+			// (1) 떠나는 클라이언트 자기 자신에게는 패킷을 직접 보냄.(이렇게 하면 대기열을 거치지 않고 즉시 전송되어, 방에서 나가기 전에 메시지를 받을 수 있습니다.)
+			if (session is ClientSession clientSession)
+			{
+				S_BroadcastEntityLeave selfLeavePacket = new S_BroadcastEntityLeave();
+				if (leave.toSceneName != null) selfLeavePacket.toSceneName = leave.toSceneName; // 사용 O(본인껄 클라에서 받아서, 사용)
+				else return;																	// 내 캐릭터가 나갔는데, leave.toSceneName가 null이라면, OnDisconnected로 나가진 것 => 나에게 패킷을 보낼 필요가 없다.
+				selfLeavePacket.ID          = session.SessionId;
+				selfLeavePacket.entityType  = session.EntityType;
+				clientSession.Send(selfLeavePacket.Write());
+			}
 			
-			// 모두에게 알리기 위해, 대기 목록에 추가
-			S_BroadcastEntityLeaveGame leave = new S_BroadcastEntityLeaveGame();
-			leave.ID         = session.SessionId;
-			leave.entityType = session.EntityType;
-			Broadcast(leave.Write());
+			// (2) 방에 남아있는 다른 모든 클라이언트들에게는 "떠난다"는 사실을 브로드캐스트합니다.(이 패킷들은 _pendingList에 추가되었다가 다음 Flush() 타이밍에 전송됩니다.)
+			S_BroadcastEntityLeave broadcastPacket = new S_BroadcastEntityLeave();
+			broadcastPacket.toSceneName = "사용X(명시용)";	   // 사용 X(명시용)
+			broadcastPacket.ID          = session.SessionId;
+			broadcastPacket.entityType  = session.EntityType;
+			Broadcast(broadcastPacket.Write());
+			
+			// (3) 모든 전송 작업이 예약된 후, 실제 세션 목록에서 제거합니다.
+			_commonSessions.Remove(session); 
+			Console.WriteLine("EntityLeave작업 진행");
 		}
 		
 		// 엔티티의 위치를 업데이트하고, 다른 클라이언트에게 알립니다.
