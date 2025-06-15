@@ -10,70 +10,82 @@
 
 <PDL>
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- 선 SR 패킷 = 처음 연결되면, 연결된 클라에게 정보를 요청 -->
-    <packet name = "S_RequestNewPlayerState"> 
-        <int name = "ID"/>
+    <packet name = "C_RequestMakeId">
+        <string name = "email"/>
+        <string name = "password"/>
+        <string name = "nickName"/>
+        <string name = "serialNumber"/>
     </packet>
 
-    <!-- 후 CR 패킷 = 요청한 정보를 보내줌 -->
-    <packet name = "C_MyState">
-        <string name = "serialNumber"/>
+    <packet name = "S_MakeIdResult">
+        <bool   name = "isSuccess"/>
+        <string name = "resultText"/>
+    </packet>
+
+    <packet name = "C_RequestLogin">
+        <string name = "email"/>
+        <string name = "password"/>
+    </packet>
+    
+    <packet name = "S_LoginResult">
+        <bool   name = "isSuccess"/>
+        <string name = "resultText"/>
+        <string name = "email"/>
         <string name = "nickname"/>
+        <string name = "serialNumber"/>
+        <string name = "creationDate"/>
         <int    name = "currentLevel"/>
         <int    name = "currentHp"/>
-        
+        <int    name = "currentExp"/>
+        <int    name = "currentGold"/>
         <string name = "savedScene"/>
-        <string name = "savedPos"/>
+        <string name = "previousScene"/>
+        <string name = "savedPosition"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <!-- 세팅이 끝나면, 자기 자신 및 모든 플레이어 Room.Enter를 통해, 정보를 받아옴  -->
     <packet name = "S_BroadcastEntityList">
-       <list  name = "entity">
-             <int    name = "entityType"/>
-       
-             <string name = "serialNumber"/>
-             <string name = "nickname"/>
-             <int    name = "currentLevel"/>
-             <int    name = "currentHp"/>
-            
-             <bool  name = "isSelf"/>
-             <bool  name = "live"/>
-             <bool  name = "invincibility"/>
-             <int   name = "ID"/>
-             <float name = "posX"/>
-             <float name = "posY"/>
-             <float name = "posZ"/>
-             <float name = "rotationY"/>
-             <int   name = "animationID"/>
-       </list>
+        <list  name = "entity">
+            <bool   name = "isSelf"/>
+            <int    name = "ID"/>
+            <int    name = "entityType"/>
+            <string name = "serialNumber"/>
+            <string name = "nickname"/>
+            <int    name = "currentLevel"/>
+            <int    name = "currentHp"/>
+            <bool   name = "live"/>
+            <bool   name = "invincibility"/>
+            <float  name = "posX"/>
+            <float  name = "posY"/>
+            <float  name = "posZ"/>
+            <float  name = "rotationY"/>
+            <int    name = "animationID"/>
+        </list>
     </packet>
     
     <!-- 다른 플레이어들에게 엔티티 입장 알리기-->
     <packet name = "S_BroadcastEntityEnter">
-      <int   name = "ID"/>
-      
-      <int    name = "entityType"/>
-      
-      <string name = "serialNumber"/>
-      <string name = "nickname"/>
-      <int    name = "currentLevel"/>
-      <int    name = "currentHp"/>
-      
-      <bool  name = "live"/>
-      <bool  name = "invincibility"/>
-      <float name = "posX"/>
-      <float name = "posY"/>
-      <float name = "posZ"/>
-      <float name = "rotationY"/>
-      <int   name = "animationID"/>
+        <int    name = "ID"/>
+        <int    name = "entityType"/>
+        <string name = "nickname"/>
+        <string name = "serialNumber"/>
+        <int    name = "currentLevel"/>
+        <int    name = "currentHp"/>
+        <bool   name = "live"/>
+        <bool   name = "invincibility"/>
+        <float  name = "posX"/>
+        <float  name = "posY"/>
+        <float  name = "posZ"/>
+        <float  name = "rotationY"/>
+        <int    name = "animationID"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
-    <!-- 클라이언트 전용 
-         플레이어가 C_SceneChange를 보내면서, 방을 옮기면서, 서버에서 PlayerLeaveGame도 같이 보내지고,  Enter 및 List도 함께 일어난다-->
+    <!-- 클라이언트가 다른 씬으로 전환하면, 해당 패킷을 통해, 알맞은 서버 방에 넣어준다
+         fromScene_toScene를 이용하여, 알맞은 씬 포탈 위치로 이동시켜 준다...-->
     <packet name = "C_SceneChange">
         <string name = "fromScene"/>
         <string name = "toScene"/>
@@ -83,35 +95,30 @@
 
     <!-- 클라이언트 전용 -->
     <packet name = "C_EntityLeave">
-        <string name = "toSceneName"/>
     </packet>
 
     <!-- 엔티티 공통 전용 -->
     <packet name = "S_BroadcastEntityLeave">
         <int    name = "ID"/>
         <int    name = "entityType"/>
-        <string name = "toSceneName"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
-    <packet name = "C_EntityInfoChange">
-        <int   name   = "currentLevel"/>
-        <int   name   = "currentHp"/>
-        <bool  name   = "invincibility"/>
-    </packet>
-
+    <!-- 애니메이션 or 히트 등등 들어온 정보에 따라서, 서버에서 처리를 하고, 변경된 정보를 서버에서 브로드캐스트 -->
     <packet name = "S_BroadcastEntityInfoChange">
         <int  name   = "ID"/>
         <int  name   = "entityType"/>
         <int  name   = "currentLevel"/>
         <int  name   = "currentHp"/>
+        <bool name   = "live"/>
         <bool name   = "invincibility"/>
     </packet>
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     
     <packet name = "C_EntityMove">
+      <bool  name = "isInstantAction"/>
       <float name = "posX"/>
       <float name = "posY"/>
       <float name = "posZ"/>
@@ -120,6 +127,7 @@
     <packet name = "S_BroadcastEntityMove">
       <int   name = "ID"/>
       <int   name = "entityType"/>
+      <bool  name = "isInstantAction"/>
       <float name = "posX"/>
       <float name = "posY"/>
       <float name = "posZ"/>
@@ -141,12 +149,18 @@
     
     <packet name = "C_EntityAnimation">
       <int name = "animationID"/>
+      <float name = "dirX"/>
+      <float name = "dirY"/>
+      <float name = "dirZ"/>    
     </packet>
       
     <packet name = "S_BroadcastEntityAnimation">
       <int name = "ID"/>
       <int name = "entityType"/>
       <int name = "animationID"/>
+      <float name = "dirX"/>
+      <float name = "dirY"/>
+      <float name = "dirZ"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -154,53 +168,44 @@
     <packet name = "C_EntityAttackAnimation">
         <int   name = "animationID"/>
         <int   name = "attackAnimeNumID"/>
-        <float name = "posX"/>
-        <float name = "posY"/>
-        <float name = "posZ"/>
+        <float name = "dirX"/>
+        <float name = "dirY"/>
+        <float name = "dirZ"/>
     </packet>
     
-    <packet name = "S_BroadcastEntityAttackAnimation">
+    <packet name = "S_BroadcastEntityAttackAnimation"   >
         <int   name = "ID"/>
         <int   name = "entityType"/>
         <int   name = "animationID"/>
         <int   name = "attackAnimeNumID"/>
-        <float name = "posX"/>
-        <float name = "posY"/>
-        <float name = "posZ"/>
+        <float name = "dirX"/>
+        <float name = "dirY"/>
+        <float name = "dirZ"/>
     </packet>
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <!-- 1개의 단일 공격에 대해서, 체크 -->
     <packet name = "C_EntityAttackCheck">
-        <float name = "posX"/>
-        <float name = "posY"/>
-        <float name = "posZ"/>
-        <float name = "rotationY"/>
-        <float name = "ab_sizeX"/>
-        <float name = "ab_sizeY"/>
-        <float name = "ab_sizeZ"/>
-        <int   name = "damage"/>
+        <float  name = "poxX"/>
+        <float  name = "poxY"/>
+        <float  name = "poxZ"/>
+        <float  name = "rotationY"/>
+        <string name = "attackSerial"/>
     </packet>
 
     <!-- 1개의 단일 공격에 대해서, 체크한 리스트 결과를 브로드캐스트-->
     <packet name = "S_BroadcastEntityAttackResult">
         <!-- 공격을 가한 엔티티의 정보 -->
-        <int name = "attackerID"/> 
-        <int name = "attackerEntityType"/>
+        <int    name = "attackerID"/> 
+        <int    name = "attackerEntityType"/>
+        <int    name = "damage"/>
+        <string name = "effectSerial"/>
 
         <!-- 공격을 받은 엔티티 리스트 -->
         <list  name = "entity"> 
-            <int   name = "targetID"/>
-            <int   name = "targetEntityType"/>
-            <float name = "posX"/>
-            <float name = "posY"/>
-            <float name = "posZ"/>
-            <float name = "rotationY"/>
-            <float name = "ab_sizeX"/>
-            <float name = "ab_sizeY"/>
-            <float name = "ab_sizeZ"/>
-            <int   name = "damage"/>
+            <int name = "targetID"/>
+            <int name = "targetEntityType"/>
         </list>
     </packet>
 

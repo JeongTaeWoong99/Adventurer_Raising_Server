@@ -16,16 +16,7 @@ namespace Server
 		
 		public override void OnConnected(EndPoint endPoint)
 		{
-			Console.WriteLine("연결됨 : " + SessionId);
-			// 서버에 클라이언트가 접속을 했다면 강제로 방에 들어오게 만듬.
-			// 하지만 실제 게임에서는 클라이언트 쪽에서 모든 리소스 업데이트가 완료 되었을 때,
-			// 서버에 신호를 보내고 그때 방에 들어오는 작업을 해줘야 한다.
-			// 연결되면, 일단 연결된 클라이언트에게 정보를 요청한다.
-			// 아직 방에 들어가 있지 않기 때문에, Program.Room.Push를 통해, 작업을 수행하는게 아닌, 배정 전, 즉 방 밖에서 작업을 수행한다...
-			// ☆ 새로 들어온 클라이언트한테는 정보 요청 보내기 (바로 보내줌. 단일 세그먼트 Send 사용)
-			S_RequestNewPlayerState requestState = new S_RequestNewPlayerState(); // 패킷 생성
-			requestState.ID = SessionId;									// 자동 생성된 패킷 ID 사용
-			Send(requestState.Write());										// Session의 Send를 통해, 바로 보내주기
+			Console.WriteLine("연결됨 : " + SessionId + ". 세션이 만들어지고, 방에는 들어가지 않은 상태.");
 		}
 		
 		// 서버에 있는 클라이언트 세션에서 클라이언트가 보낸 패킷을 받았을 때,
@@ -43,12 +34,17 @@ namespace Server
 		public override void OnDisconnected(EndPoint endPoint)
 		{
 			Console.WriteLine("연결 끊김 : " + SessionId);
+			
+			// 리얼타임 데이터베이스에 savedPosition 업데이트
+			string savedPositionString = PosX + " / " + PosY + " / " + PosZ;
+			_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, savedPositionString);
+			
+			// 세션 제거 및 룸에서 제거
 			SessionManager.Instance.Remove(this);
 			if (Room != null)
 			{
 				GameRoom room = Room;
 				C_EntityLeave dummyPtk = new C_EntityLeave();
-				dummyPtk.toSceneName = "사용X(명시용)";
 				room.Push(() => room.EntityLeave(this, dummyPtk));
 				Room = null;
 			}

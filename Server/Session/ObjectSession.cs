@@ -9,7 +9,7 @@ namespace Server
 		
 		public override void OnConnected(EndPoint endPoint)
 		{
-			Console.WriteLine("오브젝트 새로 생성 : " + SessionId);
+			// Console.WriteLine("오브젝트 새로 생성 : " + SessionId);
 		}
 
 		public override void OnDisconnected(EndPoint endPoint)

@@ -11,15 +11,15 @@ namespace Server
         static SpawnManager _instance = new SpawnManager();
         public static SpawnManager Instance { get { return _instance; } }
 
-        private Dictionary<string, ObjectAndMonsterInfoData>      _entityInfos          = new Dictionary<string, ObjectAndMonsterInfoData>();       // 오브젝트 + 몬스터 정보
+        private Dictionary<string, CharacterInfoData>      _characterInfos          = new Dictionary<string, CharacterInfoData>();       // 플레이어/몬스터/오브젝트 정보
         private Dictionary<string, List<ObjectSceneSettingData>>  _objectSceneSettings  = new Dictionary<string, List<ObjectSceneSettingData>>();   // 오브젝트 씬 세팅 정보 
         private Dictionary<string, List<MonsterSceneSettingData>> _monsterSceneSettings = new Dictionary<string, List<MonsterSceneSettingData>>();  // 몬스터 씬 세팅 정보
         
         // 파이어 베이스에서 받아온 정보로 정보 세팅
-        public void Init(List<ObjectAndMonsterInfoData> entityInfos, List<ObjectSceneSettingData> objectSettings, List<MonsterSceneSettingData> monsterSettings)
+        public void Init(List<CharacterInfoData> characterInfos, List<ObjectSceneSettingData> objectSettings, List<MonsterSceneSettingData> monsterSettings)
         {
-            // 각종 스폰 관련 데이터를 미리 Dictionary로 만들어 빠르게 조회할 수 있도록 저장합니다.
-            _entityInfos = entityInfos.ToDictionary(info => info.serialNumber);
+            // serialNumber + level 조합을 key로 사용
+            _characterInfos = characterInfos.ToDictionary(info => $"{info.serialNumber}_{info.level}");
             
             _objectSceneSettings = objectSettings
                 .GroupBy(setting => setting.sceneName)
@@ -31,7 +31,7 @@ namespace Server
         }
         
         // 서버가 켜지고, 1회 세팅
-        public void SpawnAllEntities()
+        public void DefaultSceneEntitySetting()
         {
             foreach (var room in Program.GameRooms.Values)
             {
@@ -53,27 +53,33 @@ namespace Server
                     }
                 }
             }
-            Console.WriteLine("모든 씬의 몬스터 및 오브젝트 스폰 완료!");
+            // Console.WriteLine("모든 씬의 몬스터 및 오브젝트 스폰 완료!");
         }
         
         // 서버가 켜지고, 1회 세팅
         private void SpawnObject(ObjectSceneSettingData setting, GameRoom room)
         {
-            if (!_entityInfos.TryGetValue(setting.serialNumber, out var info))
+            // 오브젝트/몬스터는 기본적으로 level 1로 처리
+            string key = $"{setting.serialNumber}_1";
+            if (!_characterInfos.TryGetValue(key, out var info))
             {
-                Console.WriteLine($"[Error] SerialNumber '{setting.serialNumber}'에 해당하는 ObjectInfo를 찾을 수 없습니다.");
+                Console.WriteLine($"[Error] SerialNumber+Level '{key}'에 해당하는 ObjectInfo를 찾을 수 없습니다.");
                 return;
             }
 
             var newSession = SessionManager.Instance.ObjectSessionGenerate();
             
             // 공통 정보 세팅
-            newSession.serialNumber = setting.serialNumber;
-            newSession.nickname = info.nickName;
+            newSession.SerialNumber = setting.serialNumber;
+            newSession.NickName     = info.nickName;
             if (int.TryParse(info.maxHp, out int maxHp))
-                newSession.currentHP = maxHp;
-            if (bool.TryParse(info.invincibility, out bool invincibility))
+                newSession.CurrentHP = maxHp;
+            if (bool.TryParse(info.invincibility?.Trim().ToLower(), out bool invincibility))
                 newSession.Invincibility = invincibility;
+            if (float.TryParse(info.body_Size, out float bSize))
+                newSession.Body_Size = bSize;
+            if (int.TryParse(info.normalAttackDamage, out int damage))
+                newSession.Damage = damage;
             
             // 위치 정보 세팅(고정)
             Vector3 spawnPos = Extension.ParseVector3(setting.makePos);
@@ -91,10 +97,11 @@ namespace Server
         // 서버가 켜지고, 1회 세팅
         private void SpawnMonster(MonsterSceneSettingData setting, GameRoom room)
         {
-            
-            if (!_entityInfos.TryGetValue(setting.serialNumber, out var info))
+            // 오브젝트/몬스터는 기본적으로 level 1로 처리
+            string key = $"{setting.serialNumber}_1";
+            if (!_characterInfos.TryGetValue(key, out var info))
             {
-                Console.WriteLine($"[Error] SerialNumber '{setting.serialNumber}'에 해당하는 MonsterInfo를 찾을 수 없습니다.");
+                Console.WriteLine($"[Error] SerialNumber+Level '{key}'에 해당하는 MonsterInfo를 찾을 수 없습니다.");
                 return;
             }
              
@@ -108,12 +115,14 @@ namespace Server
                 var newSession = SessionManager.Instance.MonsterSessionGenerate();
 
                 // 공통 정보 세팅
-                newSession.serialNumber = setting.serialNumber;
-                newSession.nickname = info.nickName;
+                newSession.SerialNumber = setting.serialNumber;
+                newSession.NickName = info.nickName;
                 if (int.TryParse(info.maxHp, out int maxHp))
-                    newSession.currentHP = maxHp;
-                if (bool.TryParse(info.invincibility, out bool invincibility))
+                    newSession.CurrentHP = maxHp;
+                if (bool.TryParse(info.invincibility?.Trim().ToLower(), out bool invincibility))
                     newSession.Invincibility = invincibility;
+                if (float.TryParse(info.body_Size, out float bSize))
+                    newSession.Body_Size = bSize;
 
                 // 위치 정보 세팅(중심값 + 범위 안에서 랜덤값을 더해줌)
                 Vector3 spawnPos = Extension.ParseVector3(setting.makePos);

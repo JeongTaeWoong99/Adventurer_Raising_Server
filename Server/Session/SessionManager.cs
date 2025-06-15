@@ -26,6 +26,7 @@ namespace Server
 			lock (_lock)
 			{
 				int sessionId = ++_sessionId;
+				
 
 				ClientSession session = new ClientSession();
 				session.SessionId = sessionId;

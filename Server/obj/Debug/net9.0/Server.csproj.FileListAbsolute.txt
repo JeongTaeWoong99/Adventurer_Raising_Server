@@ -79,3 +79,5 @@ C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\S
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\System.Management.dll
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\System.Reactive.dll
 C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\runtimes\win\lib\net7.0\System.Management.dll
+C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\FirebaseAdmin.dll
+C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Server\bin\Debug\net9.0\Google.Api.Gax.Rest.dll

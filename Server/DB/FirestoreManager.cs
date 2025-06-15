@@ -1,48 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 using Google.Cloud.Firestore;
 using Newtonsoft.Json;
 using Server;
-using System.Net;
-using System.Numerics;
-using System.Linq;
 
 #region 데이터 클래스 정의
 [Serializable]
-public class PlayerInfoData
+public class CharacterInfoData
 {
-    // public string nickName; => 리얼타임 베이터베이스에서 닉네임으로 사용
-    public string maxHp;
-    public string attack;
-    public string moveSpeed;
-    public string b_Type;
-    public string b_Size;
-    public string ab_Size;
-    
+    public string serialNumber;
     public string level;
+    public string nickName;
+    public string invincibility;
+    public string maxHp;
+    public string moveSpeed;
+    public string body_Size;
+    public string normalAttackDamage;
+    public string normalAttackRange;
+    
     public string needEXP;
+    
+    public string dropExp;
+    public string findRadius;
+    
+    // ... 기타 필요한 필드
 }
 [Serializable]
-public class ObjectAndMonsterInfoData   // 내용이 같기 때문에, 공통 사용
+public class AttackInfoData
 {
-    public string nickName;
-    public string maxHp;
-    public string attack;
-    public string moveSpeed;
-    public string b_Type;
-    public string b_Size;
-    public string ab_Size;
-    
-    public string serialNumber;  
-    public string dropExp;       
-    public string invincibility;    // 특정 오브젝트는 무적 
-    public string find_Radius;   
-    public string attack1_Length;
-    public string attack1_Timing;
+    public string attackSerial;
+    public string ownerSerial;
+    public string name;
+    public string type;
+    public string range;
+    public string damageMultiplier;
+    public string effectSerial;
+    // ... 기타 필요한 필드
 }
 [Serializable]
 public class MonsterSceneSettingData
@@ -69,11 +66,11 @@ public class NetworkRoomSceneData
     public string spawnPosition; 
 }
 [Serializable]
-public class PlayerLevelInfoList
-{ public List<PlayerInfoData> playerLevelInfos; }
+public class CharacterInfoList
+{ public List<CharacterInfoData> characterInfos; }
 [Serializable]
-public class ObjectAndMonsterList
-{ public List<ObjectAndMonsterInfoData> objectAndMonsterInfos; }
+public class AttackInfoList
+{ public List<AttackInfoData> attackInfos; }
 [Serializable]
 public class MonsterSceneSettingList
 { public List<MonsterSceneSettingData> monsterSceneSettingInfos; }
@@ -86,25 +83,30 @@ public class  NetworkRoomSceneList
 
 #endregion
 
-public class FirebaseDataDownloader
+public class FirestoreManager
 {
+    // 파이어스토어 데이터베이스    
     private FirestoreDb firestore;
+    
+    // NetworkRoomSceneData Dictionary (씬 변경 시 스폰 위치 찾기용)
+    private Dictionary<string, NetworkRoomSceneData> _networkRoomSceneDict = new Dictionary<string, NetworkRoomSceneData>();
 
-    public FirebaseDataDownloader(string projectId, string jsonPath)
+    // 생성자
+    public FirestoreManager()
     {
         // 환경 변수로 인증 정보 지정
-        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", jsonPath);
-        firestore = FirestoreDb.Create(projectId);
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json");
+        firestore = FirestoreDb.Create("d-rpg-server");
     }
-
-    public async Task DownloadAllAsync()
+    
+    // 초기화
+    public async Task Init()
     {
         // 병렬 실행
         var tasks = new List<Task>
         {
-            // 최신 정보 받아오기
-            LoadAndSaveCollectionToJson<PlayerInfoData,           PlayerLevelInfoList>    ("playerLevelInfos",        "PlayerLevelInfoData.json"),
-            LoadAndSaveCollectionToJson<ObjectAndMonsterInfoData, ObjectAndMonsterList>   ("objectAndMonsterInfos",   "ObjectAndMonsterInfoData.json"),
+            LoadAndSaveCollectionToJson<CharacterInfoData,        CharacterInfoList>      ("characterInfos",          "CharacterInfoData.json"),
+            LoadAndSaveCollectionToJson<AttackInfoData,           AttackInfoList>         ("attackInfos",             "AttackInfoData.json"),
             LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json"),
             LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json"),
             LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json"),
@@ -112,14 +114,18 @@ public class FirebaseDataDownloader
         await Task.WhenAll(tasks);
         
         // 룸 세팅
-        CreateGameRoomsBasedOnSceneData();
+        await CreateGameRoomsBasedOnSceneData();
         
-        // 씬 오브젝트 + 몬스터 세팅
-        LoadSpawnData();
+        // 씬 오브젝트 + 몬스터 초기 세팅 정보를 불러오고, 스폰 매니저를 이용해서, 생성 진행...
+        SpawnManagerInit();
         
-        Console.WriteLine("DB 세팅 완료!");
+        // NetworkRoomSceneData Dictionary 생성
+        CreateNetworkRoomSceneDict();
+        
+        // Console.WriteLine("DB 세팅 완료!");
     }
     
+    // 파이어스토리지 최신화
     private async Task LoadAndSaveCollectionToJson<TItem, TList>(string collectionName, string outputFileName) where TItem : new() where TList : new()
     {
         CollectionReference colRef   = firestore.Collection(collectionName);
@@ -183,10 +189,11 @@ public class FirebaseDataDownloader
 
         File.WriteAllText(path, jsonData);
 
-        Console.WriteLine($"✅ Firestore '{collectionName}' → JSON 저장 완료: {path}");
+        // Console.WriteLine($"✅ Firestore '{collectionName}' → JSON 저장 완료: {path}");
     }
     
-    private void CreateGameRoomsBasedOnSceneData()
+    // 룸 세팅
+    private Task CreateGameRoomsBasedOnSceneData()
     {
         string filePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "NetworkRoomSceneData.json"); 
         if (File.Exists(filePath))
@@ -208,7 +215,7 @@ public class FirebaseDataDownloader
                         }
                         else
                         {
-                            Program.GameRooms.Add(sceneData.fromScene, new GameRoom(sceneData.fromScene));
+                            Program.GameRooms.Add(sceneData.fromScene, new GameRoom(sceneData.fromScene, Program.DBManager));
                             //Console.WriteLine($"GameRoom 생성 : {sceneData.fromScene}");
                         }
                     }
@@ -231,16 +238,18 @@ public class FirebaseDataDownloader
         {
             Console.WriteLine($"Error: NetworkRoomSceneData.json 파일을 찾을 수 없습니다. 경로: {filePath}");
         }
+
+        return Task.CompletedTask;
     }
 
-    private void LoadSpawnData()
+    // 스폰 세팅
+    private void SpawnManagerInit()
     {
         // -------------------------------------------------- 스폰 데이터 로드 및 SpawnManager 초기화 --------------------------------------------------
-        
         // 엔티티 공통 정보
-        string entityInfoPath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectAndMonsterInfoData.json");
-        string entityInfoJson = File.ReadAllText(entityInfoPath);
-        ObjectAndMonsterList entityInfoList = JsonConvert.DeserializeObject<ObjectAndMonsterList>(entityInfoJson);
+        string characterInfoPath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "CharacterInfoData.json");
+        string characterInfoJson = File.ReadAllText(characterInfoPath);
+        CharacterInfoList characterInfoList = JsonConvert.DeserializeObject<CharacterInfoList>(characterInfoJson);
 
         // 오브젝트 씬 정보
         string objectScenePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "ObjectSceneSettingData.json");
@@ -253,6 +262,61 @@ public class FirebaseDataDownloader
         MonsterSceneSettingList monsterSceneList = JsonConvert.DeserializeObject<MonsterSceneSettingList>(monsterSceneJson);
 
         // SpawnManager에 로드한 데이터를 전달하여 초기화
-        SpawnManager.Instance.Init(entityInfoList.objectAndMonsterInfos, objectSceneList.objectSceneSettingInfos, monsterSceneList.monsterSceneSettingInfos);
+        SpawnManager.Instance.Init(characterInfoList.characterInfos, objectSceneList.objectSceneSettingInfos, monsterSceneList.monsterSceneSettingInfos);
+    }
+
+    // NetworkRoomSceneData Dictionary 생성
+    private void CreateNetworkRoomSceneDict()
+    {
+        string filePath = Path.Combine(@"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data", "NetworkRoomSceneData.json"); 
+        if (File.Exists(filePath))
+        {
+            string jsonData = File.ReadAllText(filePath);
+            NetworkRoomSceneList sceneListData = JsonConvert.DeserializeObject<NetworkRoomSceneList>(jsonData);
+
+            if (sceneListData != null && sceneListData.networkRoomSceneInfos != null)
+            {
+                foreach (NetworkRoomSceneData sceneData in sceneListData.networkRoomSceneInfos)
+                {
+                    if (!string.IsNullOrEmpty(sceneData.fromScene) && !string.IsNullOrEmpty(sceneData.toScene))
+                    {
+                        // Unity 클라이언트와 동일한 키 형식: "fromScene_toScene"
+                        string compoundKey = $"{sceneData.fromScene}_{sceneData.toScene}";
+                        if (!_networkRoomSceneDict.ContainsKey(compoundKey))
+                        {
+                            _networkRoomSceneDict.Add(compoundKey, sceneData);
+                            //Console.WriteLine($"씬 변경 데이터 추가: {compoundKey} -> {sceneData.spawnPosition}");
+                        }
+                    }
+                }
+                //Console.WriteLine($"NetworkRoomSceneData Dictionary 생성 완료: {_networkRoomSceneDict.Count}개 항목");
+            }
+            else
+            {
+                Console.WriteLine($"Error: NetworkRoomSceneData.json 파일 내용이 올바르지 않거나 비어있습니다. ({filePath})");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Error: NetworkRoomSceneData.json 파일을 찾을 수 없습니다. 경로: {filePath}");
+        }
+    }
+    
+    // 씬 변경 시 스폰 위치 찾기 (Unity 클라이언트와 동일한 로직)
+    public (float x, float y, float z) GetSpawnPosition(string fromScene, string toScene)
+    {
+        string compoundKey = $"{fromScene}_{toScene}";
+        
+        if (_networkRoomSceneDict.ContainsKey(compoundKey) && _networkRoomSceneDict[compoundKey] != null)
+        {
+            var spawnPositionString = _networkRoomSceneDict[compoundKey].spawnPosition;
+            Vector3 posVec = Extension.ParseVector3(spawnPositionString);
+            return (posVec.X, posVec.Y, posVec.Z);
+        }
+        else
+        {
+            Console.WriteLine($"스폰 위치를 찾을 수 없음: {compoundKey}");
+            return (0f, 0f, 0f); // 기본값
+        }
     }
 }

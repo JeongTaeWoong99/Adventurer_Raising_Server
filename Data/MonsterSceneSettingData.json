@@ -4,14 +4,14 @@
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 40.0",
+      "makePos": "19 / 0.0 / 91.0",
       "makeRadius": "10"
     },
     {
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "19 / 0.0 / 91.0",
+      "makePos": "-19 / 0.0 / 91.0",
       "makeRadius": "10"
     },
     {
@@ -25,7 +25,7 @@
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 91.0",
+      "makePos": "-19 / 0.0 / 40.0",
       "makeRadius": "10"
     }
   ]

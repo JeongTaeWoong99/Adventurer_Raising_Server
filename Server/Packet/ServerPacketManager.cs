@@ -34,17 +34,17 @@ public class PacketManager
 	public void Register()
 	{
 		
-		_makeFunc.Add((ushort)PacketID.C_MyState, MakePacket<C_MyState>);
-		 _handler.Add((ushort)PacketID.C_MyState, PacketHandler.C_MyStateHandler);
+		_makeFunc.Add((ushort)PacketID.C_RequestMakeId, MakePacket<C_RequestMakeId>);
+		 _handler.Add((ushort)PacketID.C_RequestMakeId, PacketHandler.C_RequestMakeIdHandler);
+
+		_makeFunc.Add((ushort)PacketID.C_RequestLogin, MakePacket<C_RequestLogin>);
+		 _handler.Add((ushort)PacketID.C_RequestLogin, PacketHandler.C_RequestLoginHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_SceneChange, MakePacket<C_SceneChange>);
 		 _handler.Add((ushort)PacketID.C_SceneChange, PacketHandler.C_SceneChangeHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_EntityLeave, MakePacket<C_EntityLeave>);
 		 _handler.Add((ushort)PacketID.C_EntityLeave, PacketHandler.C_EntityLeaveHandler);
-
-		_makeFunc.Add((ushort)PacketID.C_EntityInfoChange, MakePacket<C_EntityInfoChange>);
-		 _handler.Add((ushort)PacketID.C_EntityInfoChange, PacketHandler.C_EntityInfoChangeHandler);
 
 		_makeFunc.Add((ushort)PacketID.C_EntityMove, MakePacket<C_EntityMove>);
 		 _handler.Add((ushort)PacketID.C_EntityMove, PacketHandler.C_EntityMoveHandler);

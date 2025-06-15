@@ -1,3 +1,4 @@
+cd /d "%~dp0"
 START /WAIT "PacketGenerator.exe" "..\PDL.xml"
 
 XCOPY /Y "GenPackets.cs"          "..\..\DummyClient\Packet\"
