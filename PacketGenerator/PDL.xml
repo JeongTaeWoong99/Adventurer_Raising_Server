@@ -39,7 +39,6 @@
         <int    name = "currentExp"/>
         <int    name = "currentGold"/>
         <string name = "savedScene"/>
-        <string name = "previousScene"/>
         <string name = "savedPosition"/>
     </packet>
     

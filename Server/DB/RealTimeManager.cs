@@ -17,7 +17,6 @@ public class DefaultData
 	public string currentExp;
 	public string currentGold;
 	
-	public string previousScene;
 	public string savedScene;		
 	public string savedPosition;	
 }
@@ -68,7 +67,6 @@ public class RealTimeManager
 			newDefaultData.currentExp    = "0";      	// 시작 경험치
 			newDefaultData.currentGold   = "0";     	// 시작 골드
 			newDefaultData.savedScene    = "UnKnown";   // 기본 씬
-			newDefaultData.previousScene = "UnKnown";   // 이전 씬
 			newDefaultData.savedPosition = "UnKnown";   // 기본 위치
 			
 			// JSON으로 변환하여 Firebase Realtime Database에 저장

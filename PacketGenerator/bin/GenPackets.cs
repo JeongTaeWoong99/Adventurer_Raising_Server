@@ -195,7 +195,6 @@ public class S_LoginResult : IPacket
 	public int currentExp;
 	public int currentGold;
 	public string savedScene;
-	public string previousScene;
 	public string savedPosition;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_LoginResult; } }
@@ -239,10 +238,6 @@ public class S_LoginResult : IPacket
 		count += sizeof(ushort);
 		this.savedScene = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, savedSceneLen);
 		count += savedSceneLen;
-		ushort previousSceneLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		this.previousScene = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, previousSceneLen);
-		count += previousSceneLen;
 		ushort savedPositionLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 		count += sizeof(ushort);
 		this.savedPosition = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, savedPositionLen);
@@ -291,10 +286,6 @@ public class S_LoginResult : IPacket
 		Array.Copy(BitConverter.GetBytes(savedSceneLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		count += savedSceneLen;
-		ushort previousSceneLen = (ushort)Encoding.Unicode.GetBytes(this.previousScene, 0, this.previousScene.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-		Array.Copy(BitConverter.GetBytes(previousSceneLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		count += previousSceneLen;
 		ushort savedPositionLen = (ushort)Encoding.Unicode.GetBytes(this.savedPosition, 0, this.savedPosition.Length, segment.Array, segment.Offset + count + sizeof(ushort));
 		Array.Copy(BitConverter.GetBytes(savedPositionLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);

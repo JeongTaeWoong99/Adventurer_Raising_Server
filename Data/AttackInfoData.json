@@ -1,67 +1,64 @@
 {
   "attackInfos": [
     {
-      "attackSerial": "AP001F",
-      "ownerSerial": "P001",
-      "name": "Slash_Finish",
-      "type": "normal",
-      "range": "1.25 / 1.25 / 1.25",
-      "damageMultiplier": "1.25",
-      "effectSerial": "EP001"
-    },
-    {
-      "attackSerial": "AM001",
-      "ownerSerial": "M001",
-      "name": "Slash",
-      "type": "normal",
-      "range": "1.0 / 1.0 / 1.0",
-      "damageMultiplier": "1",
-      "effectSerial": "EM001"
-    },
-    {
-      "attackSerial": "AP000F",
-      "ownerSerial": "P000",
-      "name": "Slash_Finish",
-      "type": "normal",
-      "range": "1.25 / 1.25 / 1.25",
-      "damageMultiplier": "1.25",
-      "effectSerial": "EP000"
-    },
-    {
-      "attackSerial": "AP001",
-      "ownerSerial": "P001",
-      "name": "Slash",
-      "type": "normal",
-      "range": "1.0 / 1.0 / 1.0",
-      "damageMultiplier": "1",
-      "effectSerial": "EP001"
-    },
-    {
-      "attackSerial": "AP000",
+      "attackSerial": "AP000_2",
       "ownerSerial": "P000",
       "name": "Slash",
-      "type": "normal",
+      "type": "Normal",
       "range": "1.0 / 1.0 / 1.0",
+      "animeLength": "0",
+      "attackTiming": "0",
       "damageMultiplier": "1",
-      "effectSerial": "EP000"
+      "coolTime": "0",
+      "effectSerial": "EP000S"
     },
     {
-      "attackSerial": "AM000",
+      "attackSerial": "AP000_1",
+      "ownerSerial": "P000",
+      "name": "Slash",
+      "type": "Normal",
+      "range": "1.0 / 1.0 / 1.0",
+      "animeLength": "0",
+      "attackTiming": "0",
+      "damageMultiplier": "1",
+      "coolTime": "0",
+      "effectSerial": "EP000S"
+    },
+    {
+      "attackSerial": "AM000_1",
       "ownerSerial": "M000",
       "name": "Slash",
-      "type": "normal",
+      "type": "Normal",
       "range": "1.0 / 1.0 / 1.0",
+      "animeLength": "0",
+      "attackTiming": "0",
       "damageMultiplier": "1",
-      "effectSerial": "EM000"
+      "coolTime": "0",
+      "effectSerial": "EM000S"
     },
     {
-      "attackSerial": "AO001",
+      "attackSerial": "AP000_3",
+      "ownerSerial": "P000",
+      "name": "Slash_Finish",
+      "type": "Normal",
+      "range": "1.25 / 1.25 / 1.25",
+      "animeLength": "0",
+      "attackTiming": "0",
+      "damageMultiplier": "1.25",
+      "coolTime": "0",
+      "effectSerial": "EP000S"
+    },
+    {
+      "attackSerial": "AO001_1",
       "ownerSerial": "O001",
       "name": "Stab",
-      "type": "normal",
+      "type": "Normal",
       "range": "1.5 / 1.5 / 1.5",
+      "animeLength": "1",
+      "attackTiming": "0.33",
       "damageMultiplier": "1",
-      "effectSerial": "EO001"
+      "coolTime": "2",
+      "effectSerial": "EO001S"
     }
   ]
 }

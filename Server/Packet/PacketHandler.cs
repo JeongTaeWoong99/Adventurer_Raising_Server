@@ -37,123 +37,139 @@ class PacketHandler
 	
 	public static async void C_SceneChangeHandler(PacketSession session, IPacket packet) // 룸에 들어가 있지 않음.
 	{
-		C_SceneChange  sceneChangePaket = packet  as C_SceneChange;
-		ClientSession  clientSession    = session as ClientSession;
-		
-		// 씬 변경 시 스폰 위치 설정
-		string fromScene = sceneChangePaket.fromScene;
-		string toScene   = sceneChangePaket.toScene;
-
-		// 로그인 화면에서, 씬 이동(저장된 정보를 불러와서, 해당 위치로 이동)
-		if (fromScene == "Login")
+		try
 		{
-			Console.WriteLine("로그인 이동!");
-			
-			// 세션에서 사용자 이메일 가져오기 (= 키값)
-			string userEmail = clientSession.email;
-			
-			if (!string.IsNullOrEmpty(userEmail))
+			C_SceneChange  sceneChangePaket = packet  as C_SceneChange;
+			ClientSession  clientSession    = session as ClientSession;
+		
+			// 씬 변경 시 스폰 위치 설정
+			string fromScene = sceneChangePaket.fromScene;
+			string toScene   = sceneChangePaket.toScene;
+
+			// 로그인 화면에서, 씬 이동(저장된 정보를 불러와서, 해당 위치로 이동)
+			if (fromScene == "Login")
 			{
-				// 리얼타임 데이터베이스에서 사용자 정보 가져오기(비동기 작업...)
-				var userData = await Program.DBManager._realTime.GetUserDataAsync(userEmail);
-				
-				if (userData != null)
+				Console.WriteLine("로그인 이동!");
+			
+				// 세션에서 사용자 이메일 가져오기 (= 키값)
+				string userEmail = clientSession.email;
+			
+				if (!string.IsNullOrEmpty(userEmail))
 				{
-					// 저장되어 있는 씬의 정보가 UnKnown이면, Village로 이동
-					if (string.IsNullOrEmpty(userData.savedScene) || userData.savedScene == "UnKnown")
+					// 리얼타임 데이터베이스에서 사용자 정보 가져오기(비동기 작업...)
+					var userData = await Program.DBManager._realTime.GetUserDataAsync(userEmail);
+				
+					if (userData != null)
 					{
-						Console.WriteLine("저장된 씬이 UnKnown -> Village로 이동");
-						
-						// Village의 기본 스폰 위치로 이동 ("UnKnown_Village" 키 사용)
-						var villageSpawnPosition = Program.DBManager._firestore.GetSpawnPosition("UnKnown", "Village");
-						clientSession.PosX = villageSpawnPosition.x;
-						clientSession.PosY = villageSpawnPosition.y;
-						clientSession.PosZ = villageSpawnPosition.z;
-						
-						// toScene을 Village로 변경 (실제 이동할 씬)
-						toScene = "Village";
-					}
-					else
-					{
-						Console.WriteLine($"저장된 씬으로 이동: {userData.savedScene}");
-						
-						// 저장되어 있는 씬의 정보가 있다면, savedPosition을 가져와서, 해당 위치로 이동
-						if (!string.IsNullOrEmpty(userData.savedPosition) && userData.savedPosition != "UnKnown")
+						// 저장되어 있는 씬의 정보가 UnKnown이면, Village로 이동
+						if (string.IsNullOrEmpty(userData.savedScene) || userData.savedScene == "UnKnown")
 						{
-							var savedPosition = Extension.ParseVector3(userData.savedPosition);
-							clientSession.PosX = savedPosition.X;
-							clientSession.PosY = savedPosition.Y;
-							clientSession.PosZ = savedPosition.Z;
+							Console.WriteLine("저장된 씬이 UnKnown -> Village로 이동");
+						
+							// Village의 기본 스폰 위치로 이동 ("UnKnown_Village" 키 사용)
+							var villageSpawnPosition = Program.DBManager._firestore.GetSpawnPosition("UnKnown", "Village");
 							
-							Console.WriteLine($"저장된 위치로 이동: ({savedPosition.X}, {savedPosition.Y}, {savedPosition.Z})");
+							// NEW: 스폰 위치에 랜덤성 추가 (-1 ~ 1 범위)
+							Random rand = new Random();
+							float randomX = (float)(rand.NextDouble() * 2.0 - 1.0); // -1.0 ~ 1.0
+							float randomZ = (float)(rand.NextDouble() * 2.0 - 1.0); // -1.0 ~ 1.0
+							clientSession.PosX = villageSpawnPosition.x + randomX;
+							clientSession.PosY = villageSpawnPosition.y;
+							clientSession.PosZ = villageSpawnPosition.z + randomZ;
+						
+							// toScene을 Village로 변경 (실제 이동할 씬)
+							toScene = "Village";
 						}
 						else
 						{
-							// savedPosition이 없으면 해당 씬의 기본 위치로 이동
-							clientSession.PosX = 0;
-							clientSession.PosY = 0;
-							clientSession.PosZ = 0;
-							Console.WriteLine("기본 스폰 위치로 이동: (0, 0, 0");
-						}
+							Console.WriteLine($"저장된 씬으로 이동: {userData.savedScene}");
 						
-						// toScene을 저장된 씬으로 변경
-						toScene = userData.savedScene;
+							// 저장되어 있는 씬의 정보가 있다면, savedPosition을 가져와서, 해당 위치로 이동
+							if (!string.IsNullOrEmpty(userData.savedPosition) && userData.savedPosition != "UnKnown")
+							{
+								var savedPosition = Extension.ParseVector3(userData.savedPosition);
+								clientSession.PosX = savedPosition.X;
+								clientSession.PosY = savedPosition.Y;
+								clientSession.PosZ = savedPosition.Z;
+							
+								Console.WriteLine($"저장된 위치로 이동: ({savedPosition.X}, {savedPosition.Y}, {savedPosition.Z})");
+							}
+							else
+							{
+								// savedPosition이 없으면 해당 씬의 기본 위치로 이동
+								clientSession.PosX = 0;
+								clientSession.PosY = 0;
+								clientSession.PosZ = 0;
+								Console.WriteLine("기본 스폰 위치로 이동: (0, 0, 0");
+							}
+						
+							// toScene을 저장된 씬으로 변경
+							toScene = userData.savedScene;
+						}
+					}
+					else
+					{
+						Console.WriteLine("사용자 데이터를 찾을 수 없음.");
+						return;
 					}
 				}
 				else
 				{
-					Console.WriteLine("사용자 데이터를 찾을 수 없음.");
+					Console.WriteLine("세션에 사용자 이메일이 없음.");
 					return;
 				}
 			}
+			// 포탈 이동(넘어가는 씬의 알맞을 포탈 위치로 이동)
 			else
 			{
-				Console.WriteLine("세션에 사용자 이메일이 없음.");
+				Console.WriteLine("포탈 이동!");
+				// FirestoreManager에서 스폰 위치 가져오기
+				var spawnPosition = Program.DBManager._firestore.GetSpawnPosition(fromScene, toScene);
+			
+				// NEW: 포탈 스폰 위치에도 랜덤성 추가 (-1 ~ 1 범위)
+				Random rand = new Random();
+				float randomX = (float)(rand.NextDouble() * 2.0 - 1.0); // -1.0 ~ 1.0
+				float randomZ = (float)(rand.NextDouble() * 2.0 - 1.0); // -1.0 ~ 1.0
+				// 세션 위치 업데이트 (랜덤 오프셋 적용)
+				clientSession.PosX = spawnPosition.x + randomX;
+				clientSession.PosY = spawnPosition.y;
+				clientSession.PosZ = spawnPosition.z + randomZ;
+			}
+		
+			// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
+			string   targetSceneName = toScene;  // toScene으로 변경됨
+			GameRoom targetRoom      = null;
+			
+			// 찾는 방 이름이 있음
+			if (Program.GameRooms.TryGetValue(targetSceneName, out targetRoom))
+				Console.WriteLine("옮겨 가려는 룸 이름은 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
+			else
+			{
+				Console.WriteLine("옮겨 가려는 방 찾기 실패.");
 				return;
 			}
+			clientSession.Room = targetRoom; // 세션에 룸 넣어주기
+		
+			// 옮겨간 방에서 Enter 및 List 진행
+			targetRoom._commonSessions.Add(clientSession);
+			targetRoom.Push(() => targetRoom.NewPlayerSetting(clientSession));
+		
+			// 씬 변경 완료 후 리얼타임 데이터베이스에 현재 정보 업데이트
+			string savedPositionString = $"{clientSession.PosX} / {clientSession.PosY} / {clientSession.PosZ}";
+		
+			// 리얼타임 데이터베이스에 savedScene 업데이트
+			bool sceneUpdateResult = await Program.DBManager._realTime.UpdateUserSceneAsync(clientSession.email, toScene);
+		
+			// 리얼타임 데이터베이스에 savedPosition 업데이트  
+			bool positionUpdateResult = await Program.DBManager._realTime.UpdateUserPositionAsync(clientSession.email, savedPositionString);
+		
+			if (sceneUpdateResult && positionUpdateResult) Console.WriteLine($"사용자 위치 정보 업데이트 성공: {clientSession.email} -> {toScene} ({savedPositionString})");
+			else										   Console.WriteLine($"사용자 위치 정보 업데이트 실패: {clientSession.email}");
 		}
-		// 포탈 이동(넘어가는 씬의 알맞을 포탈 위치로 이동)
-		else
+		catch (Exception e)
 		{
-			Console.WriteLine("포탈 이동!");
-			// FirestoreManager에서 스폰 위치 가져오기
-			var spawnPosition = Program.DBManager._firestore.GetSpawnPosition(fromScene, toScene);
-			
-			// 세션 위치 업데이트
-			clientSession.PosX = spawnPosition.x;
-			clientSession.PosY = spawnPosition.y;
-			clientSession.PosZ = spawnPosition.z;
+			throw; // TODO 예외 처리
 		}
-		
-		// 패킷에서 룸 이름과 동일한, savedScene 이름을 가져옵니다.
-		string   targetSceneName = toScene;  // toScene으로 변경됨
-		GameRoom targetRoom      = null;
-			
-		// 찾는 방 이름이 있음
-		if (Program.GameRooms.TryGetValue(targetSceneName, out targetRoom))
-			Console.WriteLine("옮겨 가려는 룸 이름은 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
-		else
-		{
-			Console.WriteLine("옮겨 가려는 방 찾기 실패.");
-			return;
-		}
-		clientSession.Room = targetRoom; // 세션에 룸 넣어주기
-		
-		// 옮겨간 방에서 Enter 및 List 진행
-		targetRoom._commonSessions.Add(clientSession);
-		targetRoom.Push(() => targetRoom.NewPlayerSetting(clientSession));
-		
-		// 씬 변경 완료 후 리얼타임 데이터베이스에 현재 정보 업데이트
-		string savedPositionString = $"{clientSession.PosX} / {clientSession.PosY} / {clientSession.PosZ}";
-		
-		// 리얼타임 데이터베이스에 savedScene 업데이트
-		bool sceneUpdateResult = await Program.DBManager._realTime.UpdateUserSceneAsync(clientSession.email, toScene);
-		
-		// 리얼타임 데이터베이스에 savedPosition 업데이트  
-		bool positionUpdateResult = await Program.DBManager._realTime.UpdateUserPositionAsync(clientSession.email, savedPositionString);
-		
-		if (sceneUpdateResult && positionUpdateResult) Console.WriteLine($"사용자 위치 정보 업데이트 성공: {clientSession.email} -> {toScene} ({savedPositionString})");
-		else										   Console.WriteLine($"사용자 위치 정보 업데이트 실패: {clientSession.email}");
 	}
 	
 	public static void C_EntityLeaveHandler(PacketSession session, IPacket packet)

@@ -18,8 +18,7 @@ namespace Server
 		// GameRoom에 씬 이름을 넣어서, 룸을 나누기
 		public string SceneName { get; private set; }
 		
-		// ServerCore의 JobQueue를 사용하기 위해, 생성.
-		// ★ 단 하나를 만들어서, 단일 쓰레드를 이용해 사용한다!
+		// ★ 단 하나를 만들어서, 단일 쓰레드를 이용해 사용한다! ServerCore의 JobQueue를 사용하기 위해, 생성.
 		JobQueue _jobQueue = new JobQueue();
 		
 		// 세션 목록(방에 들어와 있는 오브젝트들(플레이어/오브젝트/몬스터)의 대리자)
@@ -28,17 +27,6 @@ namespace Server
 		// 전송 대기 중인 메시지 목록(JobQueue에 액션을 Push 및 Flush를 통해, 순차적으로 저장됨.)
 		private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
 		
-		public enum Layer
-		{
-			Object  = 7, Monster = 8, //Ground  = 9, Block   = 10,
-			Player  = 11,
-		}
-		
-		public enum Anime
-		{
-			Idle, Run, Dash, Attack, Skill, Pose, Hit, Death,
-		}
-		
 		public GameRoom(string sceneName, DBManager dbManager)
 		{
 			SceneName         = sceneName;
@@ -46,20 +34,20 @@ namespace Server
 			//Console.WriteLine($"GameRoom '{SceneName}' 초기화 완료.");
 		}
 		
-		// ServerCore의 JobQueue에 작업 푸쉬한다.
-		// GameRoom의 Enter(),Leave(),Move(),Flush() 작업들이 들어간다.
-		// Action은 단일 쓰레드로 처리되어, 순차적으로 _pendingList에 등록된다.
 		public void Push(Action job)
 		{
+			// ServerCore의 JobQueue에 작업 푸쉬한다.
+			// GameRoom의 Enter(),Leave(),Move(),Flush() 작업들이 들어간다.
+			// Action은 단일 쓰레드로 처리되어, 순차적으로 _pendingList에 등록된다.
 			_jobQueue.Push(job);
 		}
 		
-		// 대기 중인 작업들을 모든 클라이언트에게 전송하고 목록을 비우기.
-		// ★ 서버의 Program.cs의 Main에서 정해진 초마다, 무한으로 루프하면서, 작동.
-		// 쌓여있던 _pendingList를 비워주는 역할.(Flush()전에 쌓여있던 작업들만)
-		// 락을 잡지 않는 이유 JobQueue를 사용하기 때문에
 		public void Flush()
 		{
+			// 대기 중인 작업들을 모든 클라이언트에게 전송하고 목록을 비우기.
+			// ★ 서버의 Program.cs의 Main에서 정해진 초마다, 무한으로 루프하면서, 작동.
+			// 쌓여있던 _pendingList를 비워주는 역할.(Flush()전에 쌓여있던 작업들만)
+			// 락을 잡지 않는 이유 JobQueue를 사용하기 때문에
 			// ☆ ServerSession/ClientSession <- PacketSession <- Session
 			// ☆ 클라이언트 각자의 ClientSession, 즉 ServerCore의 Session의 Send에서 처리.
 			foreach (ClientSession c in _commonSessions.OfType<ClientSession>())
@@ -67,14 +55,15 @@ namespace Server
 			
 			_pendingList.Clear();
 		}
-		
-		// 대기 목록에 추가(패킷을 바로 보내지 않고 일단 저장을 해놓는다.)
-		// ServerCore의 JobQueue 단일 쓰레드에서 처리된 작업들 _pendingList에 넣어주기.
-		// ★ Broadcast를 어디까지 해줄지는 심화의 영역.....시야 or 범위 등등
+
 		public void Broadcast(ArraySegment<byte> segment)
 		{
+			// 대기 목록에 추가(패킷을 바로 보내지 않고 일단 저장을 해놓는다.)
+			// ServerCore의 JobQueue 단일 쓰레드에서 처리된 작업들 _pendingList에 넣어주기.
+			// ★ Broadcast를 어디까지 해줄지는 심화의 영역.....시야 or 범위 등등
 			_pendingList.Add(segment);			
 		}
+		
 		# endregion
 
 		#region 기능
@@ -94,7 +83,6 @@ namespace Server
 				live          = session.Live,
 				invincibility = session.Invincibility
 			};
-			
 			Broadcast(change.Write());
 		}
 
@@ -135,7 +123,7 @@ namespace Server
 			session.Send(entityList.Write()); // 새로 들어온 클라에게 바로! 보내주기 위해서,
 											  // Broadcast를 통해, _pendingList에 등록하지 않고
 											  // 바로 보내줌.(단일 세그먼트 Send 사용)
-											  
+			
 			// ☆ 먼저 들어와 있던 클라이언트들 모두에게, 새로운 클라이언트 입장을 알린다.
 			// ☆ 나중에 해당 부분에 바리에이션을 넣어서, 랜덤 위치 생성....
 			S_BroadcastEntityEnter enter = new S_BroadcastEntityEnter
@@ -157,7 +145,6 @@ namespace Server
 			Broadcast(enter.Write()); // 모든 클라에게 보내주기 위해서,
 											 // Broadcast를 통해, _pendingList에 등록하고,
 											 // 순차적으로 보내줌.(다중 세그먼트 Send 사용)
-			Console.WriteLine("NewPlayerSetting 전송 + 브로드캐스트");
 		}
 
 		// 엔티티를 방에서 제거하고, 다른 클라이언트에게 알리기
@@ -229,6 +216,10 @@ namespace Server
 			// 세션의 애니메이션 상태 바꿔주고
 			session.AnimationId = packet.animationID;
 			
+			// NEW: ScheduleManager에 애니메이션 상태 등록 (자동 전환 관리)
+			var animationType = (Define.Anime)packet.animationID;
+			ScheduleManager.Instance.SetAnimationState(session, animationType);
+			
 			// 애니메이션에 따른, 무적상태 변경
 			bool isCurrentInvincibility;
 			if		(packet.animationID == 0) isCurrentInvincibility = false;  // Idl
@@ -255,11 +246,14 @@ namespace Server
 			Broadcast(anime.Write());
 		}
 		
-		// 플레이어 애니메이션 처리
+		// NEW: 플레이어 애니메이션 처리 (ScheduleManager 연동)
 		public void AttackAnimation(CommonSession session, C_EntityAttackAnimation packet)
 		{
 			// 애니메이션 바꿔주고
 			session.AnimationId = packet.animationID;
+			
+			// NEW: ScheduleManager에 공격 애니메이션 상태 등록 (공격 번호 포함, 자동 타이밍 관리)
+			ScheduleManager.Instance.SetAnimationState(session, Define.Anime.Attack, packet.attackAnimeNumID);
 			
 			// 모두에게 알리기 위해, 대기 목록에 추가
 			S_BroadcastEntityAttackAnimation attackAnimation = new S_BroadcastEntityAttackAnimation {
@@ -283,11 +277,11 @@ namespace Server
 				var targets = new List<CommonSession>();
 				
 				// 플레이어 공격 -> 오브젝트/몬스터 타겟
-				if (attackerEntityType == (int)Layer.Player)
-					targets.AddRange(_commonSessions.Where(s => s.EntityType is (int)Layer.Object or (int)Layer.Monster));
+				if (attackerEntityType == (int)Define.Layer.Player)
+					targets.AddRange(_commonSessions.Where(s => s.EntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster));
 				// 오브젝트/몬스터 공격 -> 플레이어 타겟
-				else if (attackerEntityType is (int)Layer.Object or (int)Layer.Monster)
-					targets.AddRange(_commonSessions.Where(s => s.EntityType == (int)Layer.Player));
+				else if (attackerEntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster)
+					targets.AddRange(_commonSessions.Where(s => s.EntityType == (int)Define.Layer.Player));
 			
 				return targets;
 			}
@@ -299,12 +293,18 @@ namespace Server
 				target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
 				if (target.CurrentHP  > 0)
 				{
-					target.AnimationId = (int)Anime.Hit;
+					target.AnimationId = (int)Define.Anime.Hit;
+					// NEW: ScheduleManager에 Hit 애니메이션 상태 등록 (파이어베이스 hitLength 기반 자동 전환)
+					ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
 				}
 				else if (target.CurrentHP == 0)
 				{
 					target.Live        = false;
-					target.AnimationId = (int)Anime.Death; 
+					target.AnimationId = (int)Define.Anime.Death;
+					// NEW: ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
+					ScheduleManager.Instance.RemoveAnimationState(target.SessionId);
+					// NEW: 사망 후 재생성 스케줄링 (10초 후 SpawnManager에 재생성 요청)
+					ScheduleDeathAndRespawn(target);
 				}
 				EntityInfoChange(target);
 				
@@ -328,19 +328,19 @@ namespace Server
 			}
 			
 			// 지역 메서드 3 : OBB(회전된 박스) vs 구(원) 충돌 판정 (XZ 평면만, Y축 제외)
-			// 
-			// 동작 원리:
-			// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환
-			// 2. 로컬 좌표계에서 구의 중심에서 OBB까지의 최단 거리 계산
-			// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
-			// 
-			// 장점:
-			// - OBB vs OBB보다 계산이 단순함
-			// - 타겟의 크기를 정확하게 고려
-			// - Y축 체크를 제외하여 성능 최적화
-			// - Unity/Unreal의 기본 콜라이더와 호환성이 좋음
 			bool IsInAttackRange(C_EntityAttackCheck packet, CommonSession target)
 			{
+				// 동작 원리:
+				// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환
+				// 2. 로컬 좌표계에서 구의 중심에서 OBB까지의 최단 거리 계산
+				// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
+				// 
+				// 장점:
+				// - OBB vs OBB보다 계산이 단순함
+				// - 타겟의 크기를 정확하게 고려
+				// - Y축 체크를 제외하여 성능 최적화
+				// - Unity/Unreal의 기본 콜라이더와 호환성이 좋음
+			
 				// attackSerial을 통해 공격 정보 가져오기
 				AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
 				if (attackInfo == null)
@@ -437,7 +437,7 @@ namespace Server
 				}
 				else
 				{
-					string attackerType = session.EntityType == (int)Layer.Player ? "플레이어" : "오몬";
+					string attackerType = session.EntityType == (int)Define.Layer.Player ? "플레이어" : "오몬";
 					//Console.WriteLine($"{attackerType} 공격이 {target.SessionId}에 X!");
 				}
 			}
@@ -447,6 +447,126 @@ namespace Server
 			{
 				Broadcast(attackResult.Write());
 			}
+		}
+		
+		#endregion
+
+		#region ScheduleManager 연동 메서드들 - 역할 분리를 위한 인터페이스
+
+		/// <summary>
+		/// ScheduleManager에서 호출하는 자동 공격 처리 메서드
+		/// - 오브젝트/몬스터의 애니메이션 타이밍에 맞춰 자동으로 공격 실행
+		/// - 기존 AttackCheckToAttackResult 로직 재사용 (중복 제거)
+		/// - AttackInfo 시트의 A + ownerSerial 구조 활용
+		/// </summary>
+		public void ProcessScheduledAttack(CommonSession attacker, int attackNumber)
+		{
+			Console.WriteLine($"[Schedule] {attacker.SessionId} 자동 공격 실행 (A{attacker.SerialNumber}_{attackNumber})");
+			
+			// 가상의 AttackCheck 패킷 생성하여 기존 로직 재사용
+			// attackNumber는 현재 AttackInfo 시트 구조상 사용되지 않음 (향후 확장 가능)
+			var virtualAttackPacket = CreateVirtualAttackPacket(attacker, attackNumber);
+			if (virtualAttackPacket != null)
+			{
+				// 기존 AttackCheckToAttackResult 메서드 재사용 (완성도 높은 로직 활용)
+				AttackCheckToAttackResult(attacker, virtualAttackPacket);
+			}
+		}
+
+		/// <summary>
+		/// 오브젝트/몬스터 자동 공격을 위한 가상 AttackCheck 패킷 생성
+		/// - ScheduleManager의 자동 공격을 기존 시스템과 호환되게 처리
+		/// - 파이어베이스 AttackInfo 시트 구조에 맞게 attackSerial 생성 (A + ownerSerial + _공격번호)
+		/// </summary>
+		private C_EntityAttackCheck CreateVirtualAttackPacket(CommonSession attacker, int attackNumber)
+		{
+			// AttackInfoData 시트 참조 : O001, 1 → AO001_1  /  M000, 2 → AM000_2
+			string attackSerial = $"A{attacker.SerialNumber}_{attackNumber}";
+			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
+			
+			if (attackInfo == null)
+			{
+				Console.WriteLine($"[Error] 공격 정보를 찾을 수 없습니다: {attackSerial} (Owner: {attacker.SerialNumber})");
+				return null;
+			}
+
+			// NEW: 공격 범위 파싱 (AttackCheckToAttackResult와 동일한 방식)
+			string[] rangeParts = attackInfo.range.Split('/');
+			if (rangeParts.Length != 3)
+			{
+				Console.WriteLine($"[Error] 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+				return null;
+			}
+
+			// 가상 공격 패킷 생성 (AttackCheckToAttackResult 호환)
+			// - AttackInfo의 range 데이터 직접 활용
+			// - 공격자 위치와 방향 기반으로 공격 박스 구성
+			return new C_EntityAttackCheck
+			{
+				poxX         = attacker.PosX,      
+				poxY         = attacker.PosY,
+				poxZ         = attacker.PosZ,
+				rotationY    = attacker.RotationY,  // 공격자 방향
+				attackSerial = attackSerial,		// AO001, AM000, AM001 등
+			};
+		}
+		
+		/// <summary>
+		/// 사망 후 재생성 스케줄링 - 2단계 프로세스
+		/// - 1단계: 5초 후 Leave 패킷 전송 (시체 사라짐)
+		/// - 2단계: 추가 5초 후 재생성 (총 10초)
+		/// - 오브젝트: 정확한 위치 재생성 / 몬스터: 원래 스폰 영역 내 랜덤 재생성
+		/// </summary>
+		private void ScheduleDeathAndRespawn(CommonSession deadSession)
+		{
+			// 사망한 엔티티의 원래 위치 정보 보존 (오브젝트용)
+			var originalPosition = new { X = deadSession.PosX, Y = deadSession.PosY, Z = deadSession.PosZ };
+			
+			// 1단계 - 5초 후 Leave 패킷 전송 (시체 사라짐 효과)
+			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 5초 후 시체 제거
+				() => {
+					// 모든 클라이언트에 Leave 패킷 전송 (시체 사라짐)
+					SendEntityLeavePacket(deadSession);
+					// 2단계 - 추가 5초 후 재생성 스케줄링 (타입별 재생성 방식)
+					ScheduleRespawnAfterLeave(deadSession, originalPosition);
+				},
+				$"사망한 {deadSession.SerialNumber} 시체 제거 (5초 후)",
+				deadSession.SessionId,
+				SceneName
+			);
+		}
+
+		/// <summary>
+		///Leave 패킷 전송 - 사망한 엔티티 시체 제거
+		/// - 모든 클라이언트에 엔티티 사라짐 알림
+		/// - 사망 애니메이션 후 자연스러운 시체 제거 효과
+		/// </summary>
+		private void SendEntityLeavePacket(CommonSession deadSession)
+		{
+			Console.WriteLine($"[GameRoom] {deadSession.SerialNumber} 시체 제거 - Leave 패킷 전송");
+			// NEW: 모든 클라이언트에 Leave 패킷 브로드캐스트
+			S_BroadcastEntityLeave leavePacket = new S_BroadcastEntityLeave {
+				ID		   = deadSession.SessionId,
+				entityType = deadSession.EntityType
+			};
+			Broadcast(leavePacket.Write());
+		}
+
+		/// <summary>
+		/// Leave 후 재생성 스케줄링 - 2단계 재생성 프로세스
+		/// - Leave 패킷 전송 후 5초 뒤 실제 재생성 실행
+		/// - 원래 위치에서 정확히 재생성 (위치 정보 전달)
+		/// - 총 재생성 시간: 10초 (사망 → 5초 → Leave → 5초 → 재생성)
+		/// </summary>
+		private void ScheduleRespawnAfterLeave(CommonSession deadSession, dynamic originalPosition)
+		{
+			// NEW: 2단계 - Leave 후 5초 뒤 재생성 (원래 위치 정보 포함)
+			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 추가 5초 후 재생성
+				() => { //SpawnManager에 재생성 위임 (원래 위치 정보 전달)
+							SpawnManager.Instance.RespawnAtOriginalPosition(deadSession.SerialNumber, SceneName, originalPosition.X, originalPosition.Y, originalPosition.Z); },
+				   $"사망한 {deadSession.SerialNumber} 재생성 실행 (Leave 후 5초)",
+							deadSession.SessionId,
+							SceneName);
 		}
 		
 		#endregion

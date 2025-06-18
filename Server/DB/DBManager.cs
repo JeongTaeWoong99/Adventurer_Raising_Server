@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using System;
-
 namespace Server.DB;
 
 public class DBManager
@@ -13,8 +12,8 @@ public class DBManager
 	public FirestoreManager _firestore;	// App 인스턴스 분리 및 초기화 필요함...
 
 	// 데이터 Dictionary들
-	public Dictionary<string, CharacterInfoData> CharacterInfoDict { get; private set; } = new Dictionary<string, CharacterInfoData>();
-	public Dictionary<string, AttackInfoData>    AttackInfoDict    { get; private set; } = new Dictionary<string, AttackInfoData>();
+	private Dictionary<string, CharacterInfoData> CharacterInfoDict { get;  set; } = new Dictionary<string, CharacterInfoData>();
+	private Dictionary<string, AttackInfoData>    AttackInfoDict    { get;  set; } = new Dictionary<string, AttackInfoData>();
 
 	public async Task Init()
 	{
@@ -26,13 +25,7 @@ public class DBManager
 		// 비동기 초기화 작업 진행
 		await _firestore.Init(); // 파이어스토어 데이터 최신화 + 룸 세팅 + 스폰 세팅
 		
-		// JSON 데이터 로드
-		LoadDataDictionaries();
-	}
-	
-	// JSON 파일들을 로드하여 Dictionary에 저장
-	private void LoadDataDictionaries()
-	{
+		// JSON 데이터 로드 후, 디렉토리에 등록
 		LoadCharacterInfoData();
 		LoadAttackInfoData();
 	}
@@ -55,7 +48,7 @@ public class DBManager
 						string key = $"{characterInfo.serialNumber}_{characterInfo.level}";
 						CharacterInfoDict[key] = characterInfo;
 					}
-					Console.WriteLine($"캐릭터 정보 데이터 로드 완료: {CharacterInfoDict.Count}개");
+					//Console.WriteLine($"캐릭터 정보 데이터 로드 완료: {CharacterInfoDict.Count}개");
 				}
 			}
 			else
@@ -86,7 +79,7 @@ public class DBManager
 					{
 						AttackInfoDict[attackInfo.attackSerial] = attackInfo;
 					}
-					Console.WriteLine($"공격 정보 데이터 로드 완료: {AttackInfoDict.Count}개");
+					//Console.WriteLine($"공격 정보 데이터 로드 완료: {AttackInfoDict.Count}개");
 				}
 			}
 			else

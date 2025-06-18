@@ -6,7 +6,7 @@ namespace Server
 {
 	public class MonsterSession : CommonSession
 	{
-		public override int EntityType { get; } = (int)GameRoom.Layer.Monster;
+		public override int EntityType { get; } = (int)Define.Layer.Monster;
 
 		public override void OnConnected(EndPoint endPoint)
 		{

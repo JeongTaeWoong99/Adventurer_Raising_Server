@@ -122,17 +122,15 @@ public class AuthManager
             
             // 로그인 성공
             if (isLoginSuccess)
-            {
+            {   
                 Console.WriteLine($"로그인 성공: {email}");
                 
                 // 로그인에 성공하면, 이메일을 가지고, 리얼타임데이터베이스에서 정보를 가져온다.
                 DefaultData userData = await Program.DBManager._realTime.GetUserDataAsync(email);
-                
                 if (userData != null)
                 {
                     // 저장된 정보를 패킷에 담아서 클라에게 보내준다.
-                    S_LoginResult loginResult = new S_LoginResult
-                    {
+                    S_LoginResult loginResult = new S_LoginResult {
                         isSuccess     = true,
                         resultText    = "로그인 성공!",
                         email         = userData.email,
@@ -145,7 +143,6 @@ public class AuthManager
                         currentGold   = int.Parse(userData.currentGold),
                         savedPosition = userData.savedPosition,
                         savedScene    = userData.savedScene,
-                        previousScene = userData.previousScene
                     };
                     session.Send(loginResult.Write());
                     
@@ -182,10 +179,15 @@ public class AuthManager
                 {
                     // 사용자 데이터가 없는 경우 (이론적으로는 발생하지 않아야 함)
                     Console.WriteLine($"로그인 성공했지만 사용자 데이터가 없음: {email}");
-                    S_LoginResult loginResult = new S_LoginResult
-                    {
-                        isSuccess  = false,
-                        resultText = "사용자 데이터를 찾을 수 없습니다."
+                    S_LoginResult loginResult = new S_LoginResult {
+                        isSuccess     = false,
+                        resultText    = "사용자 데이터를 찾을 수 없습니다.",
+                        email         = "",
+                        nickname      = "",
+                        serialNumber  = "",
+                        creationDate  = "",
+                        savedScene    = "",
+                        savedPosition = ""
                     };
                     session.Send(loginResult.Write());
                 }
@@ -194,10 +196,15 @@ public class AuthManager
             else
             {
                 Console.WriteLine($"로그인 실패: 이메일 또는 비밀번호가 틀림");
-                S_LoginResult loginResult = new S_LoginResult
-                {
-                    isSuccess  = false,
-                    resultText = "이메일 또는 비밀번호가 잘못되었습니다."
+                S_LoginResult loginResult = new S_LoginResult {
+                    isSuccess     = false,
+                    resultText    = "이메일 또는 비밀번호가 잘못되었습니다.",
+                    email         = "",
+                    nickname      = "",
+                    serialNumber  = "",
+                    creationDate  = "",
+                    savedScene    = "",
+                    savedPosition = ""
                 };
                 session.Send(loginResult.Write());
             }
@@ -208,7 +215,13 @@ public class AuthManager
             S_LoginResult loginResult = new S_LoginResult
             {
                 isSuccess  = false,
-                resultText = "로그인 중 오류가 발생했습니다."+ e.Message
+                resultText    = "로그인 중 오류가 발생했습니다."+ e.Message,
+                email         = "",
+                nickname      = "",
+                serialNumber  = "",
+                creationDate  = "",
+                savedScene    = "",
+                savedPosition = ""
             };
             session.Send(loginResult.Write());
         }

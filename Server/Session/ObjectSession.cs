@@ -5,7 +5,7 @@ namespace Server
 {
 	public class ObjectSession : CommonSession
 	{
-		public override int EntityType { get; } = (int)GameRoom.Layer.Object;
+		public override int EntityType { get; } = (int)Define.Layer.Object;
 		
 		public override void OnConnected(EndPoint endPoint)
 		{
