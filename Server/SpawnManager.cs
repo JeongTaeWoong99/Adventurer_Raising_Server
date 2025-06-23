@@ -79,12 +79,16 @@ namespace Server
                 newSession.Invincibility = invincibility;
             if (float.TryParse(info.body_Size, out float bSize))
                 newSession.Body_Size = bSize;
+            if (float.TryParse(info.moveSpeed, out float mv))
+                newSession.moveSpeed = mv;
             if (int.TryParse(info.normalAttackDamage, out int damage))
                 newSession.Damage = damage;
             if (int.TryParse(info.level, out int level))
                 newSession.CurrentLevel = level;
             if (float.TryParse(info.hitLength, out float hitLen))
                 newSession.hitLength = hitLen;
+            if (float.TryParse(info.findRadius, out float findRad))
+                newSession.findRadius = findRad;
                 
             // 애니메이션 정보는 AttackInfoData에서 실시간으로 참조하므로 별도 설정 불필요
 
@@ -143,8 +147,6 @@ namespace Server
             if (!int.TryParse(setting.spawnNumber, out int spawnCount))
                 return;
 
-            Random rand = new Random();
-
             for (int i = 0; i < spawnCount; i++)
             {
                 var newSession = SessionManager.Instance.MonsterSessionGenerate();
@@ -158,12 +160,16 @@ namespace Server
                     newSession.Invincibility = invincibility;
                 if (float.TryParse(info.body_Size, out float bSize))
                     newSession.Body_Size = bSize;
+                if (float.TryParse(info.moveSpeed, out float mv))
+                    newSession.moveSpeed = mv;
                 if (int.TryParse(info.normalAttackDamage, out int damage))
                     newSession.Damage = damage;
                 if (int.TryParse(info.level, out int level))
                     newSession.CurrentLevel = level;
                 if (float.TryParse(info.hitLength, out float hitLen))
                     newSession.hitLength = hitLen;
+                if (float.TryParse(info.findRadius, out float findRad))
+                    newSession.findRadius = findRad;
                     
                 // 애니메이션 정보는 AttackInfoData에서 실시간으로 참조하므로 별도 설정 불필요
 
@@ -171,6 +177,8 @@ namespace Server
                 Vector3 spawnPos = Extension.ParseVector3(setting.makePos);
                 if (float.TryParse(setting.makeRadius, out float radius))
                 {
+                    // 각 몬스터마다 고유한 시드 사용
+                    Random rand = new Random((int)(DateTime.UtcNow.Ticks + newSession.SessionId + i));
                     double angle = rand.NextDouble() * 2 * Math.PI;
                     double r = radius * Math.Sqrt(rand.NextDouble());
 
@@ -226,12 +234,12 @@ namespace Server
         {
             if (serialNumber.StartsWith("O")) // 오브젝트는 정확한 위치
             {
-                Console.WriteLine($"[SpawnManager] 오브젝트 {serialNumber} 정확한 위치에서 재생성: ({originalX}, {originalY}, {originalZ})");
+                //Console.WriteLine($"[SpawnManager] 오브젝트 {serialNumber} 정확한 위치에서 재생성: ({originalX}, {originalY}, {originalZ})");
                 RespawnEntityAtPosition(serialNumber, sceneName, originalX, originalY, originalZ);
             }
             else if (serialNumber.StartsWith("M")) // 몬스터는 원래 스폰 영역 내 랜덤
             {
-                Console.WriteLine($"[SpawnManager] 몬스터 {serialNumber} 원래 스폰 영역에서 랜덤 재생성 (기준점: {originalX}, {originalY}, {originalZ})");
+                //Console.WriteLine($"[SpawnManager] 몬스터 {serialNumber} 원래 스폰 영역에서 랜덤 재생성 (기준점: {originalX}, {originalY}, {originalZ})");
                 RespawnMonsterInOriginalSpawnArea(serialNumber, sceneName, originalX, originalY, originalZ);
             }
         }
@@ -527,7 +535,7 @@ namespace Server
                 return;
             }
 
-            Console.WriteLine($"[SpawnManager] 몬스터 {serialNumber} - 가장 가까운 스폰 영역에서 재생성 (거리: {minDistance:F2})");
+            //Console.WriteLine($"[SpawnManager] 몬스터 {serialNumber} - 가장 가까운 스폰 영역에서 재생성 (거리: {minDistance:F2})");
 
             // NEW: 해당 스폰 설정을 사용해서 랜덤 재생성 (기존 SpawnMonster 방식 활용)
             SpawnSingleMonsterFromSetting(closestSetting, room);
@@ -554,11 +562,12 @@ namespace Server
             // NEW: 공통 정보 세팅
             SetupEntitySession(newSession, info, setting.serialNumber);
 
-            // NEW: 랜덤 위치 생성 (기존 SpawnMonster 방식과 동일)
+            // NEW: 랜덤 위치 생성 (고유 시드 사용으로 겹치지 않는 랜덤 값 보장)
             Vector3 spawnPos = Extension.ParseVector3(setting.makePos);
             if (float.TryParse(setting.makeRadius, out float radius))
             {
-                Random rand = new Random();
+                // 현재 시간 + 세션ID로 고유한 시드 생성
+                Random rand = new Random((int)(DateTime.UtcNow.Ticks + newSession.SessionId));
                 double angle = rand.NextDouble() * 2 * Math.PI;
                 double r = radius * Math.Sqrt(rand.NextDouble());
 
@@ -585,7 +594,7 @@ namespace Server
             // NEW: 재생성 알림 브로드캐스트
             BroadcastEntityEnter(newSession, room);
 
-            Console.WriteLine($"[SpawnManager] 몬스터 {setting.serialNumber} 랜덤 위치 재생성 완료: ({newSession.PosX:F2}, {newSession.PosY:F2}, {newSession.PosZ:F2})");
+            //Console.WriteLine($"[SpawnManager] 몬스터 {setting.serialNumber} 랜덤 위치 재생성 완료: ({newSession.PosX:F2}, {newSession.PosY:F2}, {newSession.PosZ:F2})");
         }
 
         /// <summary>
@@ -606,17 +615,16 @@ namespace Server
                 session.Invincibility = invincibility;
             if (float.TryParse(info.body_Size, out float bSize))
                 session.Body_Size = bSize;
+            if (float.TryParse(info.moveSpeed, out float mv))
+                session.moveSpeed = mv;
             if (int.TryParse(info.normalAttackDamage, out int damage))
                 session.Damage = damage;
             if (int.TryParse(info.level, out int level))
                 session.CurrentLevel = level;
             if (float.TryParse(info.hitLength, out float hitLen))
                 session.hitLength = hitLen;
-                
-            // NEW: 파이어베이스에서 변환된 애니메이션 정보 직접 설정 (하드코딩 제거)
-            // session.hitLength = info.convertedHitLength;
-            // session.attackLength = info.convertedAttackLength;
-            // session.attackTiming = info.convertedAttackTiming;
+            if (float.TryParse(info.findRadius, out float findRad))
+                session.findRadius = findRad;
         }
 
         // 엔티티 입장 브로드캐스트

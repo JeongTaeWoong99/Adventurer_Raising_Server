@@ -6,9 +6,10 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 using Server.DB;
+using System.Threading.Tasks;
 
 namespace Server
-{
+{ 
 	// <상속 구조>
 	// Server의 GameRoom / ServerCore의 JobQueue <- IJobQueue
 	// GameRoom 클래스는 게임 내의 방을 관리하며, 클라이언트 세션을 관리하고 메시지를 브로드캐스트함.
@@ -50,7 +51,9 @@ namespace Server
 			// 락을 잡지 않는 이유 JobQueue를 사용하기 때문에
 			// ☆ ServerSession/ClientSession <- PacketSession <- Session
 			// ☆ 클라이언트 각자의 ClientSession, 즉 ServerCore의 Session의 Send에서 처리.
-			foreach (ClientSession c in _commonSessions.OfType<ClientSession>())
+			// 컬렉션 수정 중 순회 문제 해결 - 안전한 복사본 생성
+			var clientSessions = _commonSessions.OfType<ClientSession>().ToList();
+			foreach (ClientSession c in clientSessions)
 				c.Send(_pendingList); // 다중 세그먼트 Send를 통해, _pendingList에 들어가 있는 모든 세그먼트 작업들을 보냄.
 			
 			_pendingList.Clear();
@@ -84,6 +87,43 @@ namespace Server
 				invincibility = session.Invincibility
 			};
 			Broadcast(change.Write());
+		}
+		
+		/// <summary>
+		/// 히트 시 넉백 이동 처리
+		/// - attacker : 공격자 세션 (위치 기준)
+		/// - target   : 피격 대상 (몬스터/오브젝트)
+		/// </summary>
+		private void StartHitKnockBack(CommonSession target, float hitFromX, float hitFromZ)
+		{
+			// 이동 속도나 길이가 없으면 패스
+			if (target.moveSpeed <= 0 || target.hitLength <= 0)
+				return;
+
+			// 방향 벡터 계산 (hitCenter → target) 후 반대 방향으로 이동
+			float dirX = target.PosX - hitFromX;
+			float dirZ = target.PosZ - hitFromZ;
+			float mag  = (float)Math.Sqrt(dirX * dirX + dirZ * dirZ);
+			if (mag <= 0.0001f)
+				return;
+			dirX /= mag;
+			dirZ /= mag;
+			
+			float moveX = dirX;
+			float moveZ = dirZ;
+			target.PosX += moveX / 5f; // 노멀라이즈된 값에서 약간만 이동 하도록
+			target.PosZ += moveZ / 5f; // 노멀라이즈된 값에서 약간만 이동 하도록
+			
+			//Console.WriteLine($"[KnockbackDir] targetSession={target.SessionId} dir=({dirX:F3},{dirZ:F3}) hitCenter=({hitFromX:F2},{hitFromZ:F2}) targetPos=({target.PosX:F2},{target.PosZ:F2})");
+			S_BroadcastEntityMove mv = new S_BroadcastEntityMove {
+				ID              = target.SessionId,
+				entityType      = target.EntityType,
+				isInstantAction = true,			
+				posX            = target.PosX,
+				posY            = target.PosY,
+				posZ            = target.PosZ
+			};
+			Broadcast(mv.Write());
 		}
 
 		#endregion
@@ -190,11 +230,10 @@ namespace Server
 				posY 			= session.PosY,
 				posZ 			= session.PosZ
 			};
-
 			Broadcast(move.Write());
 		}
 		
-		// 플레이어 애니메이션 처리
+		// 엔티티 로테이션
 		public void Rotation(CommonSession session, C_EntityRotation packet)
 		{
 			// 애니메이션 바꿔주고
@@ -210,7 +249,7 @@ namespace Server
 			Broadcast(rotation.Write());	
 		}
 		
-		// 플레이어 애니메이션 처리
+		// 엔티티 애니메이션 처리
 		public void Animation(CommonSession session, C_EntityAnimation packet)
 		{
 			// 세션의 애니메이션 상태 바꿔주고
@@ -221,15 +260,10 @@ namespace Server
 			ScheduleManager.Instance.SetAnimationState(session, animationType);
 			
 			// 애니메이션에 따른, 무적상태 변경
-			bool isCurrentInvincibility;
-			if		(packet.animationID == 0) isCurrentInvincibility = false;  // Idl
-			else if (packet.animationID == 2) isCurrentInvincibility = true;   // Dash
-			else							  isCurrentInvincibility = false;  // 기타
-			
 			// 실시간 정보 변경 알리기(새로 들어온 상태가 현재 상태와 다른 경우)
-			if (isCurrentInvincibility != session.Invincibility)
+			if (false != session.Invincibility)
 			{
-				session.Invincibility = isCurrentInvincibility;	// 내 세션 정보 변경
+				session.Invincibility = false;	// 내 세션 정보 변경
 				EntityInfoChange(session);						// 브로드케스트
 			}
 			
@@ -237,12 +271,39 @@ namespace Server
 			S_BroadcastEntityAnimation anime = new S_BroadcastEntityAnimation {
 				ID          = session.SessionId,
 				entityType  = session.EntityType,
-				dirX        = packet.dirX,
-				dirY        = packet.dirY,
-				dirZ        = packet.dirZ,
 				animationID = packet.animationID
 			};
 
+			Broadcast(anime.Write());
+		}
+		
+		// 플레이어 대쉬 처리
+		public void Dash(CommonSession session, C_EntityDash packet)
+		{
+			// 세션의 애니메이션 상태 바꿔주고
+			session.AnimationId = packet.animationID;
+			
+			// NEW: ScheduleManager에 애니메이션 상태 등록 (자동 전환 관리)
+			var animationType = (Define.Anime)packet.animationID;
+			ScheduleManager.Instance.SetAnimationState(session, animationType);
+			
+			// 애니메이션에 따른, 무적상태 변경
+			// 실시간 정보 변경 알리기(새로 들어온 상태가 현재 상태와 다른 경우)
+			if (true != session.Invincibility)
+			{ 
+				session.Invincibility = true;  // 내 세션 정보 변경
+				EntityInfoChange(session);	   // 브로드케스트
+			}
+			
+			// 모두에게 알리기 위해, 대기 목록에 추가
+			S_BroadcastEntityDash anime = new S_BroadcastEntityDash {
+				ID          = session.SessionId,
+				entityType  = session.EntityType,
+				animationID = packet.animationID,
+				dirX        = packet.dirX,
+				dirY        = packet.dirY,
+				dirZ        = packet.dirZ,
+			};
 			Broadcast(anime.Write());
 		}
 		
@@ -286,48 +347,7 @@ namespace Server
 				return targets;
 			}
 			
-			// 지역 메서드 2 : 히트 처리 (체력 감소, 애니메이션, 위치 동기화, 결과 추가)
-			void ProcessHit(CommonSession target, int damage, S_BroadcastEntityAttackResult attackResult)
-			{
-				// 타겟의 서버에서 상태 변경 및 브로드케스트
-				target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
-				if (target.CurrentHP  > 0)
-				{
-					target.AnimationId = (int)Define.Anime.Hit;
-					// NEW: ScheduleManager에 Hit 애니메이션 상태 등록 (파이어베이스 hitLength 기반 자동 전환)
-					ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
-				}
-				else if (target.CurrentHP == 0)
-				{
-					target.Live        = false;
-					target.AnimationId = (int)Define.Anime.Death;
-					// NEW: ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
-					ScheduleManager.Instance.RemoveAnimationState(target.SessionId);
-					// NEW: 사망 후 재생성 스케줄링 (10초 후 SpawnManager에 재생성 요청)
-					ScheduleDeathAndRespawn(target);
-				}
-				EntityInfoChange(target);
-				
-				// 히트된 타겟의 위치 즉시 동기화 (isInstantAction = true)
-				S_BroadcastEntityMove syncMove = new S_BroadcastEntityMove {
-					ID				= target.SessionId,
-					entityType		= target.EntityType,
-					isInstantAction = true,				
-					posX 			= target.PosX,
-					posY 			= target.PosY,
-					posZ 			= target.PosZ
-				};
-				Broadcast(syncMove.Write());
-			
-				// 공격 결과에 타겟 추가
-				var hitTarget = new S_BroadcastEntityAttackResult.Entity {
-					targetID         = target.SessionId,
-					targetEntityType = target.EntityType
-				};
-				attackResult.entitys.Add(hitTarget);
-			}
-			
-			// 지역 메서드 3 : OBB(회전된 박스) vs 구(원) 충돌 판정 (XZ 평면만, Y축 제외)
+			// 지역 메서드 2 : OBB(회전된 박스) vs 구(원) 충돌 판정 (XZ 평면만, Y축 제외)
 			bool IsInAttackRange(C_EntityAttackCheck packet, CommonSession target)
 			{
 				// 동작 원리:
@@ -364,8 +384,8 @@ namespace Server
 				float checkRangeZ = rangeZ * 2;
 				
 				// 공격 박스의 중심점과 크기(Y축 제외)
-				float centerX   = packet.poxX;
-				float centerZ   = packet.poxZ;
+				float centerX   = packet.attackCenterX;
+				float centerZ   = packet.attackCenterZ;
 				float rotationY = packet.rotationY;
 				
 				// 타겟의 현재 위치와 반지름(Y축 제외)
@@ -398,8 +418,54 @@ namespace Server
 				float distanceSquared = dx * dx + dz * dz;
 				
 				// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
+				// Console.WriteLine(distanceSquared + " <= (" + targetRadius + " * " + targetRadius + ")");
 				return distanceSquared <= (targetRadius * targetRadius);
-			}		
+			}			
+			
+			// 지역 메서드 3 : 히트 처리 (체력 감소, 애니메이션, 위치 동기화, 결과 추가)
+			void ProcessHit(CommonSession target, int damage, S_BroadcastEntityAttackResult attackResult)
+			{
+				// 타겟의 서버에서 상태 변경 및 브로드케스트
+				target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
+				if (target.CurrentHP  > 0)
+				{
+					target.AnimationId = (int)Define.Anime.Hit;
+					// ScheduleManager에 Hit 애니메이션 상태 등록 (파이어베이스 hitLength 기반 자동 전환)
+					ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
+					// 런 중에 히트를 당했으면, 이동한 시간 만큼 이동
+					if (target.AnimationId == (int)Define.Anime.Run)
+						ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
+					// 히트 넉백 이동 시작 (몬스터/오브젝트) : 공격 중심 좌표(packet.poxX/Z)를 사용해 넉백 위치 결정
+					StartHitKnockBack(target, packet.attackCenterX, packet.attackCenterZ);
+				}
+				else if (target.CurrentHP == 0)
+				{
+					target.Live        = false;
+					target.AnimationId = (int)Define.Anime.Death;
+					// ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
+					ScheduleManager.Instance.RemoveAnimationState(target.SessionId);
+					// 사망 후 재생성 스케줄링 (10초 후 SpawnManager에 재생성 요청)
+					ScheduleDeathAndRespawn(target);
+				}
+				EntityInfoChange(target);
+				
+				// 서버 넉백과 동일한 방향 계산 (target -> hitCenter 의 반대)
+				float rawDirX = target.PosX - packet.attackCenterX;
+				float rawDirZ = target.PosZ - packet.attackCenterZ;
+				float mag = (float)Math.Sqrt(rawDirX * rawDirX + rawDirZ * rawDirZ);
+				float dirX = (mag > 0.0001f) ? rawDirX / mag : 0f;
+				float dirZ = (mag > 0.0001f) ? rawDirZ / mag : 0f;
+
+				var hitTarget = new S_BroadcastEntityAttackResult.Entity {
+					targetID         = target.SessionId,
+					targetEntityType = target.EntityType,
+					hitMoveDirX      = dirX,
+					hitMoveDirY      = 0,
+					hitMoveDirZ      = dirZ,
+				};
+				attackResult.entitys.Add(hitTarget);
+				//Console.WriteLine($"[ProcessHit] targetId={target.SessionId} dir=({dirX:F3},{dirZ:F3}) attackCenter=({packet.attackCenterX:F2},{packet.attackCenterZ:F2}) targetPos=({target.PosX:F2},{target.PosZ:F2})");
+			}
 			
 			// attackSerial을 통해 공격 정보 가져오기
 			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
@@ -408,13 +474,12 @@ namespace Server
 				//Console.WriteLine($"공격 정보를 찾을 수 없습니다: {packet.attackSerial}");
 				return;
 			}
-		
+			
 			S_BroadcastEntityAttackResult attackResult = new S_BroadcastEntityAttackResult {
 				attackerID         = session.SessionId,
 				attackerEntityType = session.EntityType,
 				effectSerial       = attackInfo.effectSerial
 			};
-			
 			// 데미지 계산 (기본 공격력 * 데미지 배수)
 			float baseDamage       = session.Damage;
 			float damageMultiplier = float.Parse(attackInfo.damageMultiplier);
@@ -455,14 +520,13 @@ namespace Server
 
 		/// <summary>
 		/// ScheduleManager에서 호출하는 자동 공격 처리 메서드
-		/// - 오브젝트/몬스터의 애니메이션 타이밍에 맞춰 자동으로 공격 실행
+		/// - 오브젝트의 애니메이션 타이밍에 맞춰 자동으로 공격 실행
 		/// - 기존 AttackCheckToAttackResult 로직 재사용 (중복 제거)
 		/// - AttackInfo 시트의 A + ownerSerial 구조 활용
 		/// </summary>
 		public void ProcessScheduledAttack(CommonSession attacker, int attackNumber)
 		{
-			Console.WriteLine($"[Schedule] {attacker.SessionId} 자동 공격 실행 (A{attacker.SerialNumber}_{attackNumber})");
-			
+			//Console.WriteLine($"[Schedule] {attacker.SessionId} 자동 공격 실행 (A{attacker.SerialNumber}_{attackNumber})");
 			// 가상의 AttackCheck 패킷 생성하여 기존 로직 재사용
 			// attackNumber는 현재 AttackInfo 시트 구조상 사용되지 않음 (향후 확장 가능)
 			var virtualAttackPacket = CreateVirtualAttackPacket(attacker, attackNumber);
@@ -498,16 +562,16 @@ namespace Server
 				return null;
 			}
 
-			// 가상 공격 패킷 생성 (AttackCheckToAttackResult 호환)
-			// - AttackInfo의 range 데이터 직접 활용
-			// - 공격자 위치와 방향 기반으로 공격 박스 구성
-			return new C_EntityAttackCheck
-			{
-				poxX         = attacker.PosX,      
-				poxY         = attacker.PosY,
-				poxZ         = attacker.PosZ,
-				rotationY    = attacker.RotationY,  // 공격자 방향
-				attackSerial = attackSerial,		// AO001, AM000, AM001 등
+			// 공격 중심 = 본인 위치 + 앞(0.5m) + 약간 위(1m)
+			double rad = attacker.RotationY * Math.PI / 180.0;
+			float forwardX = (float)Math.Sin(rad);
+			float forwardZ = (float)Math.Cos(rad);
+			return new C_EntityAttackCheck {
+				attackCenterX = attacker.PosX + forwardX * 0.5f,
+				attackCenterY = attacker.PosY + 1f,
+				attackCenterZ = attacker.PosZ + forwardZ * 0.5f,
+				rotationY     = attacker.RotationY,
+				attackSerial  = attackSerial,
 			};
 		}
 		
@@ -543,7 +607,7 @@ namespace Server
 		/// </summary>
 		private void SendEntityLeavePacket(CommonSession deadSession)
 		{
-			Console.WriteLine($"[GameRoom] {deadSession.SerialNumber} 시체 제거 - Leave 패킷 전송");
+			//Console.WriteLine($"[GameRoom] {deadSession.SerialNumber} 시체 제거 - Leave 패킷 전송");
 			// NEW: 모든 클라이언트에 Leave 패킷 브로드캐스트
 			S_BroadcastEntityLeave leavePacket = new S_BroadcastEntityLeave {
 				ID		   = deadSession.SessionId,

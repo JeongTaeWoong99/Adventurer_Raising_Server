@@ -74,7 +74,7 @@ public class AuthManager
             
             // Auth 저장
             var userRecord = await auth.CreateUserAsync(userArgs);
-            Console.WriteLine($"아이디 생성성 완료 : {userRecord.Uid}");
+            //Console.WriteLine($"아이디 생성성 완료 : {userRecord.Uid}");
             
             // 성공 결과 클라에게 보내주기
             S_MakeIdResult loginResult = new S_MakeIdResult
@@ -86,7 +86,7 @@ public class AuthManager
 
             // 리얼타임 데이터베이스에 기본 캐릭터 정보 생성
             await Program.DBManager._realTime.SaveDefaultDataAsync(email, nickname, serialNumber);
-			Console.WriteLine($"사용자 데이터 리얼타임 데이터 베이스 저장 완료 : {userRecord.Uid}");
+			//Console.WriteLine($"사용자 데이터 리얼타임 데이터 베이스 저장 완료 : {userRecord.Uid}");
         }
         catch (FirebaseAuthException e)
         {
@@ -123,7 +123,7 @@ public class AuthManager
             // 로그인 성공
             if (isLoginSuccess)
             {   
-                Console.WriteLine($"로그인 성공: {email}");
+                //Console.WriteLine($"로그인 성공: {email}");
                 
                 // 로그인에 성공하면, 이메일을 가지고, 리얼타임데이터베이스에서 정보를 가져온다.
                 DefaultData userData = await Program.DBManager._realTime.GetUserDataAsync(email);
@@ -173,7 +173,7 @@ public class AuthManager
                         Console.WriteLine($"캐릭터 정보를 찾을 수 없습니다: {userData.serialNumber}_{userData.currentLevel}");
                     }
                     
-                    Console.WriteLine($"사용자 데이터 로드 완료: {userData.nickname}");
+                    //Console.WriteLine($"사용자 데이터 로드 완료: {userData.nickname}");
                 }
                 else
                 {
@@ -251,7 +251,7 @@ public class AuthManager
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var result = JsonConvert.DeserializeObject<FirebaseSignInResponse>(responseContent);
                 
-                Console.WriteLine($"Firebase 인증 성공: {result.localId}");
+                //Console.WriteLine($"Firebase 인증 성공: {result.localId}");
                 return true;
             }
             else

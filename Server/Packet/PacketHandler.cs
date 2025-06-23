@@ -49,7 +49,7 @@ class PacketHandler
 			// 로그인 화면에서, 씬 이동(저장된 정보를 불러와서, 해당 위치로 이동)
 			if (fromScene == "Login")
 			{
-				Console.WriteLine("로그인 이동!");
+				//Console.WriteLine("로그인 이동!");
 			
 				// 세션에서 사용자 이메일 가져오기 (= 키값)
 				string userEmail = clientSession.email;
@@ -64,7 +64,7 @@ class PacketHandler
 						// 저장되어 있는 씬의 정보가 UnKnown이면, Village로 이동
 						if (string.IsNullOrEmpty(userData.savedScene) || userData.savedScene == "UnKnown")
 						{
-							Console.WriteLine("저장된 씬이 UnKnown -> Village로 이동");
+							//Console.WriteLine("저장된 씬이 UnKnown -> Village로 이동");
 						
 							// Village의 기본 스폰 위치로 이동 ("UnKnown_Village" 키 사용)
 							var villageSpawnPosition = Program.DBManager._firestore.GetSpawnPosition("UnKnown", "Village");
@@ -82,7 +82,7 @@ class PacketHandler
 						}
 						else
 						{
-							Console.WriteLine($"저장된 씬으로 이동: {userData.savedScene}");
+							//Console.WriteLine($"저장된 씬으로 이동: {userData.savedScene}");
 						
 							// 저장되어 있는 씬의 정보가 있다면, savedPosition을 가져와서, 해당 위치로 이동
 							if (!string.IsNullOrEmpty(userData.savedPosition) && userData.savedPosition != "UnKnown")
@@ -92,7 +92,7 @@ class PacketHandler
 								clientSession.PosY = savedPosition.Y;
 								clientSession.PosZ = savedPosition.Z;
 							
-								Console.WriteLine($"저장된 위치로 이동: ({savedPosition.X}, {savedPosition.Y}, {savedPosition.Z})");
+								//Console.WriteLine($"저장된 위치로 이동: ({savedPosition.X}, {savedPosition.Y}, {savedPosition.Z})");
 							}
 							else
 							{
@@ -142,7 +142,9 @@ class PacketHandler
 			
 			// 찾는 방 이름이 있음
 			if (Program.GameRooms.TryGetValue(targetSceneName, out targetRoom))
-				Console.WriteLine("옮겨 가려는 룸 이름은 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
+			{
+				//Console.WriteLine("옮겨 가려는 룸 이름은 " + targetRoom.SceneName + ". 방 정상 찾기 성공.");
+			}
 			else
 			{
 				Console.WriteLine("옮겨 가려는 방 찾기 실패.");
@@ -163,12 +165,12 @@ class PacketHandler
 			// 리얼타임 데이터베이스에 savedPosition 업데이트  
 			bool positionUpdateResult = await Program.DBManager._realTime.UpdateUserPositionAsync(clientSession.email, savedPositionString);
 		
-			if (sceneUpdateResult && positionUpdateResult) Console.WriteLine($"사용자 위치 정보 업데이트 성공: {clientSession.email} -> {toScene} ({savedPositionString})");
+			if (sceneUpdateResult && positionUpdateResult) {} //Console.WriteLine($"사용자 위치 정보 업데이트 성공: {clientSession.email} -> {toScene} ({savedPositionString})");
 			else										   Console.WriteLine($"사용자 위치 정보 업데이트 실패: {clientSession.email}");
 		}
 		catch (Exception e)
 		{
-			throw; // TODO 예외 처리
+			Console.WriteLine(e);
 		}
 	}
 	
@@ -229,6 +231,16 @@ class PacketHandler
 		{
 			GameRoom room = commonSession.Room;
 			room.Push(() => room.AttackAnimation(commonSession, attackAnimationPacket));
+		}
+	}
+	
+	public static void C_EntityDashHandler(PacketSession session, IPacket packet)
+	{
+		C_EntityDash dashPtk = packet as C_EntityDash;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.Dash(commonSession, dashPtk));
 		}
 	}
 	

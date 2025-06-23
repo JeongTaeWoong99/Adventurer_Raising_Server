@@ -148,18 +148,30 @@
     
     <packet name = "C_EntityAnimation">
       <int name = "animationID"/>
-      <float name = "dirX"/>
-      <float name = "dirY"/>
-      <float name = "dirZ"/>    
     </packet>
-      
+    
     <packet name = "S_BroadcastEntityAnimation">
       <int name = "ID"/>
       <int name = "entityType"/>
       <int name = "animationID"/>
-      <float name = "dirX"/>
-      <float name = "dirY"/>
-      <float name = "dirZ"/>
+    </packet>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <packet name = "C_EntityDash">
+        <int   name = "animationID"/>
+        <float name = "dirX"/>
+        <float name = "dirY"/>
+        <float name = "dirZ"/>
+    </packet>
+    
+    <packet name = "S_BroadcastEntityDash">
+        <int   name = "ID"/>
+        <int   name = "entityType"/>
+        <int   name = "animationID"/>
+        <float name = "dirX"/>
+        <float name = "dirY"/>
+        <float name = "dirZ"/>
     </packet>
     
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -186,9 +198,9 @@
 
     <!-- 1개의 단일 공격에 대해서, 체크 -->
     <packet name = "C_EntityAttackCheck">
-        <float  name = "poxX"/>
-        <float  name = "poxY"/>
-        <float  name = "poxZ"/>
+        <float  name = "attackCenterX"/>
+        <float  name = "attackCenterY"/>
+        <float  name = "attackCenterZ"/>
         <float  name = "rotationY"/>
         <string name = "attackSerial"/>
     </packet>
@@ -203,8 +215,11 @@
 
         <!-- 공격을 받은 엔티티 리스트 -->
         <list  name = "entity"> 
-            <int name = "targetID"/>
-            <int name = "targetEntityType"/>
+            <int    name = "targetID"/>
+            <int    name = "targetEntityType"/>
+            <float  name = "hitMoveDirX"/>
+            <float  name = "hitMoveDirY"/>
+            <float  name = "hitMoveDirZ"/>
         </list>
     </packet>
 

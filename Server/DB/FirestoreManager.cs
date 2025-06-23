@@ -25,20 +25,6 @@ public class CharacterInfoData
     public string normalAttackDamage;
     public string normalAttackRange;
     public string hitLength;
-    
-    // 새로운 애니메이션 필드들 (JSON에서 받아올 문자열) - 시트 필드명과 정확히 일치
-    //public string hitLength     { get; set; }     // 시트의 hitLength (소문자)
-    //public List<float> convertedAttackLength   { get; set; }
-    // public string attackLength1 { get; set; }     // 시트의 attackLength1
-    // public string attackTiming1 { get; set; }     // 시트의 attackTiming1  
-    // public string attackLength2 { get; set; }     // 시트의 attackLength2
-    // public string attackTiming2 { get; set; }     // 시트의 attackTiming2
-    // public string attackLength3 { get; set; }     // 시트의 attackLength3
-    // public string attackTiming3 { get; set; }     // 시트의 attackTiming3
-    
-    // // CommonSession에 저장할 리스트들 (변환 후) - Converted 접두사로 구분
-    // public List<float> convertedAttackTiming   { get; set; }
-    // public float       convertedHitLength      { get; set; }
 }
 [Serializable]
 public class AttackInfoData
@@ -280,52 +266,6 @@ public class FirestoreManager
         // SpawnManager에 로드한 데이터를 전달하여 초기화
         SpawnManager.Instance.Init(characterInfoList.characterInfos, objectSceneList.objectSceneSettingInfos, monsterSceneList.monsterSceneSettingInfos);
     }
-    
-    // 애니메이션 데이터를 문자열에서 리스트로 변환
-    // private void ConvertAnimationDataToLists(List<CharacterInfoData> characterInfos)
-    // {
-    //     foreach (var characterInfo in characterInfos)
-    //     {
-    //         // Hit Length 변환 (hitLength → convertedHitLength)
-    //         if (float.TryParse(characterInfo.hitLength, out float hitLengthValue))
-    //             characterInfo.convertedHitLength = hitLengthValue;
-    //         else
-    //             characterInfo.convertedHitLength = 0f;
-    //         
-    //         // Attack Length & Timing 리스트 초기화 (0번은 비우고 1,2,3번 사용)
-    //         characterInfo.convertedAttackLength = new List<float> { 0f, 0f, 0f, 0f }; // 0, 1, 2, 3 인덱스
-    //         characterInfo.convertedAttackTiming = new List<float> { 0f, 0f, 0f, 0f }; // 0, 1, 2, 3 인덱스
-    //         
-    //         // Attack Length 1 변환
-    //         if (float.TryParse(characterInfo.attackLength1, out float attackLength1))
-    //             characterInfo.convertedAttackLength[1] = attackLength1;
-    //             
-    //         // Attack Timing 1 변환
-    //         if (float.TryParse(characterInfo.attackTiming1, out float attackTiming1))
-    //             characterInfo.convertedAttackTiming[1] = attackTiming1;
-    //             
-    //         // Attack Length 2 변환
-    //         if (float.TryParse(characterInfo.attackLength2, out float attackLength2))
-    //             characterInfo.convertedAttackLength[2] = attackLength2;
-    //             
-    //         // Attack Timing 2 변환
-    //         if (float.TryParse(characterInfo.attackTiming2, out float attackTiming2))
-    //             characterInfo.convertedAttackTiming[2] = attackTiming2;
-    //             
-    //         // Attack Length 3 변환
-    //         if (float.TryParse(characterInfo.attackLength3, out float attackLength3))
-    //             characterInfo.convertedAttackLength[3] = attackLength3;
-    //             
-    //         // Attack Timing 3 변환
-    //         if (float.TryParse(characterInfo.attackTiming3, out float attackTiming3))
-    //             characterInfo.convertedAttackTiming[3] = attackTiming3;
-    //             
-    //         Console.WriteLine($"[애니메이션 변환] {characterInfo.serialNumber}_{characterInfo.level}: Hit={characterInfo.convertedHitLength}, " +
-    //                         $"Attack1={characterInfo.convertedAttackLength[1]}/{characterInfo.convertedAttackTiming[1]}, " +
-    //                         $"Attack2={characterInfo.convertedAttackLength[2]}/{characterInfo.convertedAttackTiming[2]}, " +
-    //                         $"Attack3={characterInfo.convertedAttackLength[3]}/{characterInfo.convertedAttackTiming[3]}");
-    //     }
-    // }
 
     // NetworkRoomSceneData Dictionary 생성
     private void CreateNetworkRoomSceneDict()
