@@ -40,12 +40,12 @@ namespace Server
 		#endregion
 
 		#region 몬스터 및 오브젝트 정보
-		public string   MmNumber       { get; set; } // NEW: 관리번호 (O01, M01, ...)
+		public string MmNumber       { get; set; } // NEW: 관리번호 (O01, M01, ...)
 		
-		public float moveSpeed      { get; set; }
-		public float findRadius     { get; set; }
-		public float dropExp        { get; set; }
-		public float hitLength      { get; set; }
+		public float  moveSpeed      { get; set; }
+		public float  findRadius     { get; set; }
+		public float  dropExp        { get; set; }
+		public float  hitLength      { get; set; }
 		public Dictionary<string, DateTime> LastAttackTimes { get; private set; } = new Dictionary<string, DateTime>(); // 공격별 마지막 사용 시각 (쿨타임 계산용)
 		
 		#endregion

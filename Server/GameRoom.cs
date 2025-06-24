@@ -46,13 +46,9 @@ namespace Server
 		public void Flush()
 		{
 			// 대기 중인 작업들을 모든 클라이언트에게 전송하고 목록을 비우기.
-			// ★ 서버의 Program.cs의 Main에서 정해진 초마다, 무한으로 루프하면서, 작동.
-			// 쌓여있던 _pendingList를 비워주는 역할.(Flush()전에 쌓여있던 작업들만)
+			// 서버의 Program.cs의 Main에서 정해진 초마다, 무한으로 루프하면서, 작동.
 			// 락을 잡지 않는 이유 JobQueue를 사용하기 때문에
-			// ☆ ServerSession/ClientSession <- PacketSession <- Session
-			// ☆ 클라이언트 각자의 ClientSession, 즉 ServerCore의 Session의 Send에서 처리.
-			// 컬렉션 수정 중 순회 문제 해결 - 안전한 복사본 생성
-			var clientSessions = _commonSessions.OfType<ClientSession>().ToList();
+			var clientSessions = _commonSessions.OfType<ClientSession>().ToList(); // 컬렉션 수정 중 순회 문제 해결 => 안전한 복사본 생성
 			foreach (ClientSession c in clientSessions)
 				c.Send(_pendingList); // 다중 세그먼트 Send를 통해, _pendingList에 들어가 있는 모든 세그먼트 작업들을 보냄.
 			
@@ -61,7 +57,7 @@ namespace Server
 
 		public void Broadcast(ArraySegment<byte> segment)
 		{
-			// 대기 목록에 추가(패킷을 바로 보내지 않고 일단 저장을 해놓는다.)
+			// 대기 목록에 추가(패킷을 바로 보내지 않고 일단 저장. 일정한 시간마다 비워 줌...)
 			// ServerCore의 JobQueue 단일 쓰레드에서 처리된 작업들 _pendingList에 넣어주기.
 			// ★ Broadcast를 어디까지 해줄지는 심화의 영역.....시야 or 범위 등등
 			_pendingList.Add(segment);			
@@ -194,16 +190,18 @@ namespace Server
 			// ☆ 이렇게 하면 대기열을 거치지 않고 즉시 전송되어, 방에서 나가기 전에 메시지를 받을 수 있습니다.☆
 			if (session is ClientSession clientSession)
 			{
-				S_BroadcastEntityLeave selfLeavePacket = new S_BroadcastEntityLeave();
-				selfLeavePacket.ID         = session.SessionId;
-				selfLeavePacket.entityType = session.EntityType;
+				S_BroadcastEntityLeave selfLeavePacket = new S_BroadcastEntityLeave {
+					ID         = session.SessionId,
+					entityType = session.EntityType
+				};
 				clientSession.Send(selfLeavePacket.Write());
 			}
 			
 			// (2) 방에 남아있는 다른 모든 클라이언트들에게는 "떠난다"는 사실을 브로드캐스트합니다.(이 패킷들은 _pendingList에 추가되었다가 다음 Flush() 타이밍에 전송됩니다.)
-			S_BroadcastEntityLeave broadcastPacket = new S_BroadcastEntityLeave();
-			broadcastPacket.ID         = session.SessionId;
-			broadcastPacket.entityType = session.EntityType;
+			S_BroadcastEntityLeave broadcastPacket = new S_BroadcastEntityLeave {
+				ID         = session.SessionId,
+				entityType = session.EntityType
+			};
 			Broadcast(broadcastPacket.Write());
 			
 			// (3) 모든 전송 작업이 예약된 후, 실제 세션 목록에서 제거합니다.
@@ -255,16 +253,15 @@ namespace Server
 			// 세션의 애니메이션 상태 바꿔주고
 			session.AnimationId = packet.animationID;
 			
-			// NEW: ScheduleManager에 애니메이션 상태 등록 (자동 전환 관리)
+			// ScheduleManager에 애니메이션 상태 등록 및 자동 전환 관리(=> 플레이어는 제외)
 			var animationType = (Define.Anime)packet.animationID;
 			ScheduleManager.Instance.SetAnimationState(session, animationType);
 			
-			// 애니메이션에 따른, 무적상태 변경
-			// 실시간 정보 변경 알리기(새로 들어온 상태가 현재 상태와 다른 경우)
-			if (false != session.Invincibility)
+			// 대쉬가 아닌 애니메이션이 들어오고, 세션이 무적인 경우
+			if (session.Invincibility && (int)Define.Anime.Dash != packet.animationID)
 			{
 				session.Invincibility = false;	// 내 세션 정보 변경
-				EntityInfoChange(session);						// 브로드케스트
+				EntityInfoChange(session);		// 브로드케스트
 			}
 			
 			// 모두에게 알리기 위해, 대기 목록에 추가
@@ -283,7 +280,7 @@ namespace Server
 			// 세션의 애니메이션 상태 바꿔주고
 			session.AnimationId = packet.animationID;
 			
-			// NEW: ScheduleManager에 애니메이션 상태 등록 (자동 전환 관리)
+			// ScheduleManager에 애니메이션 상태 등록 및 자동 전환 관리(=> 플레이어는 제외)
 			var animationType = (Define.Anime)packet.animationID;
 			ScheduleManager.Instance.SetAnimationState(session, animationType);
 			
@@ -420,21 +417,27 @@ namespace Server
 				// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
 				// Console.WriteLine(distanceSquared + " <= (" + targetRadius + " * " + targetRadius + ")");
 				return distanceSquared <= (targetRadius * targetRadius);
-			}			
+			}
 			
 			// 지역 메서드 3 : 히트 처리 (체력 감소, 애니메이션, 위치 동기화, 결과 추가)
 			void ProcessHit(CommonSession target, int damage, S_BroadcastEntityAttackResult attackResult)
 			{
+				// 이미 사망 상태이거나 HP가 0인 타겟은 데미지 처리 제외
+				if (!target.Live || target.CurrentHP <= 0)
+				{
+					Console.WriteLine($"[ProcessHit] {target.NickName}({target.SessionId})는 이미 사망 상태 - 데미지 처리 제외");
+					return;
+				}
+				
 				// 타겟의 서버에서 상태 변경 및 브로드케스트
 				target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
 				if (target.CurrentHP  > 0)
 				{
 					target.AnimationId = (int)Define.Anime.Hit;
-					// ScheduleManager에 Hit 애니메이션 상태 등록 (파이어베이스 hitLength 기반 자동 전환)
+					// ScheduleManager에 애니메이션 상태 등록 및 자동 전환 관리(=> 플레이어는 제외)
 					ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
-					// 런 중에 히트를 당했으면, 이동한 시간 만큼 이동
-					if (target.AnimationId == (int)Define.Anime.Run)
-						ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
+					// 몬스터가 런 중에 히트를 당했으면, 이동한 시간 만큼 이동
+					if (target.AnimationId == (int)Define.Anime.Run) ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
 					// 히트 넉백 이동 시작 (몬스터/오브젝트) : 공격 중심 좌표(packet.poxX/Z)를 사용해 넉백 위치 결정
 					StartHitKnockBack(target, packet.attackCenterX, packet.attackCenterZ);
 				}
@@ -444,8 +447,15 @@ namespace Server
 					target.AnimationId = (int)Define.Anime.Death;
 					// ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
 					ScheduleManager.Instance.RemoveAnimationState(target.SessionId);
-					// 사망 후 재생성 스케줄링 (10초 후 SpawnManager에 재생성 요청)
+					// 사망 후, 재생성 스케줄링. 10초 후 SpawnManager에 재생성 요청(=> 플레이어는 제외)
 					ScheduleDeathAndRespawn(target);
+					
+					// 사망 후, 플레이어는 DB에 저장된 씬의 이름을 Village로 변경.
+					if (target.EntityType == (int)Define.Layer.Player && target is ClientSession playerSession)
+					{
+						_ = Program.DBManager._realTime.UpdateUserSceneAsync(playerSession.email, "Village");
+						Console.WriteLine($"[GameRoom] 플레이어 {playerSession.NickName}({playerSession.SessionId}) 사망 - DB 씬을 Village로 변경");
+					}
 				}
 				EntityInfoChange(target);
 				
@@ -490,9 +500,10 @@ namespace Server
 			var targets = GetAttackTargets(session.EntityType);
 			foreach (var target in targets)
 			{
-				if (!target.Live || target.Invincibility)
+				// 사망, 무적, HP 0 상태 체크
+				if (!target.Live || target.Invincibility || target.CurrentHP <= 0)
 				{
-					//Console.WriteLine(target.NickName + "이 사망 or 무적이라 체크 제외");
+					//Console.WriteLine(target.NickName + "이 사망 or 무적 or HP 0이라 체크 제외");
 					continue;
 				}
 				
@@ -583,17 +594,18 @@ namespace Server
 		/// </summary>
 		private void ScheduleDeathAndRespawn(CommonSession deadSession)
 		{
+			// 플레이어 제외
+			// 플레이어는 사망 후, 마을로 돌아가기 버튼을 통해, 자기 자신이 직접 Leave를 요청.(= 마을로 돌아가기 버튼과 동일. 방에 들어왔을 때, HP가 0이면, 풀 충전하여 부활...)
+			if (deadSession.EntityType == (int)Define.Layer.Player)
+				return;
+		
 			// 1단계 - 5초 후 Leave 패킷 전송 (시체 사라짐 효과)
-			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 5초 후 시체 제거
-				() => {
-					// 모든 클라이언트에 Leave 패킷 전송 (시체 사라짐)
-					SendEntityLeavePacket(deadSession);
-					// 2단계 - 추가 5초 후 재생성 스케줄링 (타입별 재생성 방식)
-					ScheduleRespawnAfterLeave(deadSession);
-				},
-				$"사망한 {deadSession.SerialNumber} 시체 제거 (5초 후)",
-				deadSession.SessionId,
-				SceneName
+			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5),					// 5초 후 시체 제거
+											  () => { SendEntityLeavePacket(deadSession);		// 모든 클라이언트에 Leave 패킷 전송 (시체 사라짐)
+														  ScheduleRespawnAfterLeave(deadSession);}, // 2단계 - 추가 5초 후 재생성 스케줄링 (타입별 재생성 방식)
+											     $"사망한 {deadSession.SerialNumber} 시체 제거 (5초 후)",
+												  		  deadSession.SessionId,
+												  		  SceneName
 			);
 		}
 
@@ -605,14 +617,13 @@ namespace Server
 		private void SendEntityLeavePacket(CommonSession deadSession)
 		{
 			//Console.WriteLine($"[GameRoom] {deadSession.SerialNumber} 시체 제거 - Leave 패킷 전송");
-			// NEW: 모든 클라이언트에 Leave 패킷 브로드캐스트
 			S_BroadcastEntityLeave leavePacket = new S_BroadcastEntityLeave {
 				ID		   = deadSession.SessionId,
 				entityType = deadSession.EntityType
 			};
 			Broadcast(leavePacket.Write());
 		}
-
+		
 		/// <summary>
         /// Leave 후 재생성 스케줄링 - 2단계 재생성 프로세스 (OPTIMIZED)
         /// - Leave 패킷 전송 후 5초 뒤 실제 재생성 실행
@@ -621,13 +632,12 @@ namespace Server
         /// </summary>
         private void ScheduleRespawnAfterLeave(CommonSession deadSession)
         {
-            // OPTIMIZED: mmNumber로 직접 재생성 (위치 계산 불필요)
+            // mmNumber로 직접 재생성 (위치 계산 불필요)
             ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 추가 5초 후 재생성
-                () => { // SpawnManager에 재생성 위임 (mmNumber 기반 빠른 재생성)
-                        SpawnManager.Instance.RespawnByMmNumber(deadSession.MmNumber, SceneName); },
-                   $"사망한 {deadSession.SerialNumber}({deadSession.MmNumber}) 재생성 실행 (Leave 후 5초)",
-                            deadSession.SessionId,
-                            SceneName);
+									  () => { SpawnManager.Instance.RespawnByMmNumber(deadSession.MmNumber, SceneName); },			// SpawnManager에 재생성 위임 (mmNumber 기반 빠른 재생성)
+										 $"사망한 {deadSession.SerialNumber}({deadSession.MmNumber}) 재생성 실행 (Leave 후 5초)",
+                            					  deadSession.SessionId,
+                            					  SceneName);
         }
 		
 		#endregion

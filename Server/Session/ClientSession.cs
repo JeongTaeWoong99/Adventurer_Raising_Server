@@ -32,12 +32,21 @@ namespace Server
 		{
 			// 클라쪽에서 명시적으로 나가지 않고,강제종료된 경우는
 			// ClientSession.cs의 OnDisconnected에서 감지 후, 방에서 나가게 한다.
-		
 			Console.WriteLine("연결 끊김 : " + SessionId);
 			
-			// 리얼타임 데이터베이스에 savedPosition 업데이트
-			string savedPositionString = PosX + " / " + PosY + " / " + PosZ;
-			_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, savedPositionString);
+			// 사망 상태일 때 Village로 씬 변경
+			if (CurrentHP <= 0 || !Live)
+			{
+				_ = Program.DBManager._realTime.UpdateUserSceneAsync(email, "Village");
+				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, "0 / 0 / 0");
+				Console.WriteLine($"[OnDisconnected] 플레이어 {NickName}({SessionId}) 사망 상태로 강제종료 - DB 씬을 Village로 변경 + 0 0 0 으로 위치 변경");
+			}
+			else
+			{
+				// 리얼타임 데이터베이스에 savedPosition 업데이트
+				string savedPositionString = PosX + " / " + PosY + " / " + PosZ;
+				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, savedPositionString);
+			}
 			
 			// 세션 제거 및 룸에서 제거
 			SessionManager.Instance.Remove(this);

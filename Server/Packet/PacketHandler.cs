@@ -63,10 +63,29 @@ class PacketHandler
 			switch (type)
 			{
 				case "LoginToSave": // 리얼타임 데이터베이스를 통해, 저장된 savedScene를 받아서, toScene에 넣어주기
+					// 사망 상태 체크 후 복구
+					if (clientSession.CurrentHP <= 0 || !clientSession.Live)
+					{
+						clientSession.CurrentHP = clientSession.MaxHP;
+						clientSession.Live = true;
+						clientSession.Invincibility = false;
+						clientSession.AnimationId = 0;
+						Console.WriteLine($"[LoginToSave] 플레이어 {clientSession.NickName} 사망 상태 복구 완료");
+					}
+					// 정상적인 LoginToSave 흐름 (사망 상태든 아니든 동일하게 처리)
 					toScene = await HandleLoginToSaveMove(clientSession, spawnX, spawnY, spawnZ, toScene);
 					break;
 					
-				case "ForcedMove":  // mmNumber에 해당하는 toScene 사용
+				case "ForcedMove":  // mmNumber에 해당하는 toScene 사용 (마을로 돌아가기 버튼 또는 일반 워프)
+					// 사망 상태인 경우에만 상태 복구
+					if (clientSession.CurrentHP <= 0 || !clientSession.Live)
+					{
+						clientSession.CurrentHP = clientSession.MaxHP;
+						clientSession.Live = true;
+						clientSession.Invincibility = false;
+						clientSession.AnimationId = 0;
+						Console.WriteLine($"[ForcedMove] 플레이어 {clientSession.NickName} 사망 상태 복구 완료");
+					}
 					HandleFixedRandomMove(clientSession, spawnX, spawnY, spawnZ, toScene, mmNumber, "ForcedMove");
 					break;
 					

@@ -6,23 +6,11 @@
       "name": "Slash",
       "type": "Immediate",
       "range": "1.0 / 1.0 / 1.0",
-      "animeLength": "0",
-      "attackTiming": "0",
+      "animeLength": "0.83",
+      "attackTiming": "0.33",
       "damageMultiplier": "1",
       "coolTime": "0",
       "effectSerial": "EM000S"
-    },
-    {
-      "attackSerial": "AP000_3",
-      "ownerSerial": "P000",
-      "name": "Slash_Finish",
-      "type": "Immediate",
-      "range": "1.25 / 1.25 / 1.25",
-      "animeLength": "0",
-      "attackTiming": "0",
-      "damageMultiplier": "1.25",
-      "coolTime": "0",
-      "effectSerial": "EP000S"
     },
     {
       "attackSerial": "AO001_1",
@@ -57,6 +45,18 @@
       "animeLength": "0",
       "attackTiming": "0",
       "damageMultiplier": "1",
+      "coolTime": "0",
+      "effectSerial": "EP000S"
+    },
+    {
+      "attackSerial": "AP000_3",
+      "ownerSerial": "P000",
+      "name": "Slash_Finish",
+      "type": "Immediate",
+      "range": "1.25 / 1.25 / 1.25",
+      "animeLength": "0",
+      "attackTiming": "0",
+      "damageMultiplier": "1.25",
       "coolTime": "0",
       "effectSerial": "EP000S"
     }

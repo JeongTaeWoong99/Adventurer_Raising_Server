@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Timers;
+using Google.Apis.Upload;
 using Timer = System.Timers.Timer;
 
 namespace Server
@@ -142,17 +143,17 @@ namespace Server
                 switch (animState.CurrentAnimation)
                 {
                     case Define.Anime.Idle:
-                        // 몬스터류 => 플레이어 찾기
-                        if (session.SerialNumber.StartsWith("M") && session.findRadius > 0)
-                            CheckPlayerDetection(session, animState, now);
                         // 트랩류 => 공격 반복
                         if (animState.IsRepeatingAttack)
                             CheckPossibleAttack(session, animState, now);
+                        // 몬스터류 => 플레이어 찾기
+                        if (session.SerialNumber.StartsWith("M") && session.findRadius > 0)
+                            CheckPlayerDetection(session, animState, now);
                         break;
                     case Define.Anime.Run:
-                        // 정상 Run 이동한 만큼 이동(저장된 방향 x 시간)
+                        // 정상 Run 이동한 만큼 먼저 이동(저장된 방향 x 시간)
                         RunTimePosMove(session, animState, now);
-                        // 몬스터류 => 플레이어 찾기
+                        // 플레이어 찾기
                         if (session.SerialNumber.StartsWith("M") && session.findRadius > 0)
                             CheckPlayerDetection(session, animState, now);
                         break;
@@ -200,10 +201,10 @@ namespace Server
             float angleDeg = angleRad * 180.0f / (float)Math.PI;
             monster.RotationY = angleDeg;
 
-            Console.WriteLine($"[몬스터 이동] {monster.SerialNumber}({monster.SessionId}) " +
-                            $"위치: ({monster.PosX:F2}, {monster.PosZ:F2}), " +
-                            $"방향: ({animState.MoveDirectionX:F3}, {animState.MoveDirectionZ:F3}), " +
-                            $"각도: {angleDeg:F1}도");
+            // Console.WriteLine($"[몬스터 이동] {monster.SerialNumber}({monster.SessionId}) " +
+            //                 $"위치: ({monster.PosX:F2}, {monster.PosZ:F2}), " +
+            //                 $"방향: ({animState.MoveDirectionX:F3}, {animState.MoveDirectionZ:F3}), " +
+            //                 $"각도: {angleDeg:F1}도");
         }    
         
         /// <summary>
@@ -250,7 +251,7 @@ namespace Server
                 }
 
                 // 범위 안 플레이어를 발견
-                if (targetPlayer != null)
+                if(targetPlayer != null)
                 {
                     // 방향 벡터 계산 (몬스터 -> 플레이어)
                     float dirX = targetPlayer.PosX - monster.PosX;
@@ -289,6 +290,12 @@ namespace Server
                     
                     // 몬스터 회전 설정
                     monster.RotationY = angleDeg;
+                    
+                    // 공격이 가능한지 체크 (방향 정보 포함)
+                    // 유효한 공격이 있음 => 공격 진행
+                    // 유효한 공격이 없음 => 이동 작업 진행
+                    if (CheckPossibleAttack(monster, animState, now, targetPlayer, closestDistance, dirX, dirZ))
+                        return;
                     
                     // Idle 상태에서만 Run으러 전환 및 전파
                     if (wasIdle)
@@ -331,7 +338,7 @@ namespace Server
                         });
                     }
                 }
-                // 범위 안 플레이어를 없음
+                // 범위 안 플레이어를 없음 => IDLE 전환
                 else
                 {
                     TransitionToIdle(monster, animState);
@@ -375,17 +382,17 @@ namespace Server
         /// - 반복 오브젝트는 쿨타임 기반 반복 공격 발생
         /// - 몬스터는 공격 가능 1~3 중, 범위 + 쿨타임 체크해서, 발생
         /// </summary>
-        private void CheckPossibleAttack(CommonSession session, AnimationState animState, DateTime now)
+        private bool CheckPossibleAttack(CommonSession session, AnimationState animState, DateTime now, CommonSession targetPlayer = null, float distanceToTarget = 0f, float dirX = 0f, float dirZ = 0f)
         {
             // 오브젝트(트랩)은 공격1 반복
             if (session.SerialNumber.StartsWith("O"))
             {
                 string attackSerial = $"A{session.SerialNumber}_1";
                 AttackInfoData info = Program.DBManager.GetAttackInfo(attackSerial);
-                if (info == null) return;
+                if (info == null) return false;
 
                 float.TryParse(info.coolTime, out float cooldown);
-                if (cooldown <= 0) return;
+                if (cooldown <= 0) return false;
 
                 DateTime lastTime = DateTime.MinValue;
                 session.LastAttackTimes.TryGetValue(attackSerial, out lastTime);
@@ -393,57 +400,106 @@ namespace Server
                 if ((now - lastTime).TotalSeconds >= cooldown)
                 {
                     StartAttackAnimation(session, animState, 1);
+                    return true;
                 }
-                return;
+                return false;
             }
 
             // 몬스터: 여러 공격 중 조건 만족하는 것 선택
             if (session.SerialNumber.StartsWith("M"))
             {
+                // 타겟 플레이어가 없으면 공격 불가
+                if (targetPlayer == null) return false;
+                
                 List<int> candidateAttacks = new List<int>();
+                
+                // 모든 공격(1~3)을 체크하여 유효한 공격 확인
                 for (int i = 1; i <= 3; i++)
                 {
                     string attackSerial = $"A{session.SerialNumber}_{i}";
                     var info = Program.DBManager.GetAttackInfo(attackSerial);
-                    if (info == null) continue;
+                    if (info == null)
+                    {
+                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 공격 정보 없음");
+                        continue;
+                    }
                     
+                    // 쿨타임 체크
                     float.TryParse(info.coolTime, out float cooldown);
-                    if (cooldown <= 0) continue;
+                    if (cooldown < 0)
+                    {
+                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 쿨타임 설정 오류 (coolTime: {info.coolTime})");
+                        continue;
+                    }
 
                     DateTime lastTime = DateTime.MinValue;
                     session.LastAttackTimes.TryGetValue(attackSerial, out lastTime);
-                    if ((now - lastTime).TotalSeconds >= cooldown)
-                        candidateAttacks.Add(i);
+                    double elapsedSeconds = (now - lastTime).TotalSeconds;
+                    
+                    if (elapsedSeconds < cooldown)
+                    {
+                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 쿨다운 중 (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, 남은시간: {(cooldown - elapsedSeconds):F1}초)");
+                        continue;
+                    }
+                    
+                    // 타겟 플레이어와의 거리 기반 범위 체크 (range를 "X / Y / Z" 형식에서 X 값 추출)
+                    string[] rangeParts = info.range.Split('/');
+                    if (rangeParts.Length >= 1 && float.TryParse(rangeParts[0].Trim(), out float attackRange))
+                    {
+                        // 타겟 플레이어의 몸통 크기도 고려
+                        float effectiveDistance = distanceToTarget - targetPlayer.Body_Size;
+                        if (effectiveDistance < 0) effectiveDistance = 0;
+                        
+                        if (effectiveDistance <= attackRange)
+                        {
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, 타겟거리: {distanceToTarget:F1}, 유효거리: {effectiveDistance:F1}, 범위: {attackRange})");
+                            candidateAttacks.Add(i);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 타겟 범위 밖 (타겟거리: {distanceToTarget:F1}, 유효거리: {effectiveDistance:F1}, 범위: {attackRange}, 쿨타임: OK)");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 범위 설정 오류 (range: {info.range})");
+                    }
                 }
 
                 if (candidateAttacks.Count == 0) 
-                    return; // 쿨다운 중
+                {
+                    Console.WriteLine($"[공격 체크] {session.SerialNumber}: 사용 가능한 공격 없음 (쿨다운 또는 범위 밖)");
+                    return false;
+                }
 
-                // 거리 기반 필터링은 GameRoom에서 처리하므로, 여기서는 랜덤 선택만
-                // TODO : 추후, 몬스터가 따라가기 타겟을 선택했으면,
-                // TODO : 일정 시간마다, 타겟 위치 + 범위에 선택된 공격의 범위를 비교하여,
-                // TODO : 유효하면, 공격을 발생시키도록 함....
+                // 사용 가능한 공격들 중 랜덤 선택
                 Random rand = new Random();
                 int attackNumber = candidateAttacks[rand.Next(candidateAttacks.Count)];
-                StartAttackAnimation(session, animState, attackNumber);
+                Console.WriteLine($"[공격 선택] {session.SerialNumber}: 공격{attackNumber} 선택됨 (후보: [{string.Join(", ", candidateAttacks)}])");
+                
+                // 공격 실행 - GameRoom에서 범위 내 모든 플레이어들에게 데미지 적용 (방향 정보 포함)
+                StartAttackAnimation(session, animState, attackNumber, dirX, dirZ);
+                return true;
             }
+            
+            return false;
         }    
         
         // Attack 애니메이션 시작
-        private void StartAttackAnimation(CommonSession session, AnimationState animState, int attackNumber = 1)
+        private void StartAttackAnimation(CommonSession session, AnimationState animState, int attackNumber = 1, float dirX = 0f, float dirZ = 1f)
         {
             animState.CurrentAnimation    = Define.Anime.Attack;
             animState.AnimationStartTime  = DateTime.UtcNow;
             animState.AttackTriggered     = false;
             animState.CurrentAttackNumber = attackNumber;
             animState.LastAttackTime      = DateTime.UtcNow;
-
+            
             // 쿨타임 기록
             string attackSerial = $"A{session.SerialNumber}_{attackNumber}";
             session.LastAttackTimes[attackSerial] = DateTime.UtcNow;
             session.AnimationId = 3;
 
-            // 브로드캐스트
+            // 브로드캐스트 (방향 정보 포함)
             session.Room?.Push(() =>
             {
                 var attackAnim = new S_BroadcastEntityAttackAnimation {
@@ -451,9 +507,9 @@ namespace Server
                     entityType       = session.EntityType,
                     animationID      = 3,
                     attackAnimeNumID = attackNumber,
-                    dirX             = 0, 
+                    dirX             = dirX, 
                     dirY             = 0, 
-                    dirZ             = 1
+                    dirZ             = dirZ
                 };
                 session.Room.Broadcast(attackAnim.Write());
             });
@@ -600,6 +656,11 @@ namespace Server
         /// </summary>
         public void SetAnimationState(CommonSession session, Define.Anime animationType, int attackNumber = 1)
         {
+            // 플레이어 제외
+            // 플레이어는 클라이언트 측에서 애니메이션 전환을 관리하므로, 서버에서 Idle 상태로 강제 전환하지 않는다.
+            if (session.EntityType == (int)Define.Layer.Player)
+                return;
+        
             lock (_lock)
             {
                 if (!_animationStates.ContainsKey(session.SessionId))
