@@ -40,6 +40,7 @@ namespace Server
 		#endregion
 
 		#region 몬스터 및 오브젝트 정보
+		public string   MmNumber       { get; set; } // NEW: 관리번호 (O01, M01, ...)
 		
 		public float moveSpeed      { get; set; }
 		public float findRadius     { get; set; }

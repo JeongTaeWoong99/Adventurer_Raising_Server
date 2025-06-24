@@ -554,8 +554,8 @@ namespace Server
                 session.Room.Broadcast(idleAnimPacket.Write());
             });
             
-            if(session.SerialNumber.StartsWith("M"))
-                Console.WriteLine($"{session.SerialNumber}({session.SessionId}) -> Idle 전환");
+            // if(session.SerialNumber.StartsWith("M"))
+            //     Console.WriteLine($"{session.SerialNumber}({session.SessionId}) -> Idle 전환");
         }            
         
         // 세션 찾기 (모든 룸에서 검색)
@@ -674,4 +674,4 @@ namespace Server
         
         #endregion
     }
-} 
+}

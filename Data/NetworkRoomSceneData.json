@@ -1,24 +1,40 @@
 {
   "networkRoomSceneInfos": [
     {
-      "fromScene": "Stage2",
-      "toScene": "Stage1",
-      "spawnPosition": "0 / 0 / 10"
-    },
-    {
-      "fromScene": "Stage1",
+      "mmNumber": "N05",
+      "type": "Portal",
       "toScene": "Stage2",
       "spawnPosition": "-4 / 0 / 123"
     },
     {
-      "fromScene": "Stage1",
-      "toScene": "Village",
-      "spawnPosition": "0 / 0 / -80"
+      "mmNumber": "N00",
+      "type": "LoginToSave",
+      "toScene": "SavedScene",
+      "spawnPosition": "SavedPosition"
     },
     {
-      "fromScene": "Village",
+      "mmNumber": "N04",
+      "type": "Portal",
+      "toScene": "Stage1",
+      "spawnPosition": "0 / 0 / 10"
+    },
+    {
+      "mmNumber": "N01",
+      "type": "ForcedMove",
+      "toScene": "Village",
+      "spawnPosition": "0 / 0 / 0"
+    },
+    {
+      "mmNumber": "N03",
+      "type": "Portal",
       "toScene": "Stage1",
       "spawnPosition": "-4 / 0 / 123"
+    },
+    {
+      "mmNumber": "N02",
+      "type": "Portal",
+      "toScene": "Village",
+      "spawnPosition": "0 / 0 / -80"
     }
   ]
 }

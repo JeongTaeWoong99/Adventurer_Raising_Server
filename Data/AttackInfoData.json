@@ -13,14 +13,14 @@
       "effectSerial": "EM000S"
     },
     {
-      "attackSerial": "AP000_1",
+      "attackSerial": "AP000_3",
       "ownerSerial": "P000",
-      "name": "Slash",
+      "name": "Slash_Finish",
       "type": "Immediate",
-      "range": "1.0 / 1.0 / 1.0",
+      "range": "1.25 / 1.25 / 1.25",
       "animeLength": "0",
       "attackTiming": "0",
-      "damageMultiplier": "1",
+      "damageMultiplier": "1.25",
       "coolTime": "0",
       "effectSerial": "EP000S"
     },
@@ -37,7 +37,7 @@
       "effectSerial": "EO001S"
     },
     {
-      "attackSerial": "AP000_2",
+      "attackSerial": "AP000_1",
       "ownerSerial": "P000",
       "name": "Slash",
       "type": "Immediate",
@@ -49,14 +49,14 @@
       "effectSerial": "EP000S"
     },
     {
-      "attackSerial": "AP000_3",
+      "attackSerial": "AP000_2",
       "ownerSerial": "P000",
-      "name": "Slash_Finish",
+      "name": "Slash",
       "type": "Immediate",
-      "range": "1.25 / 1.25 / 1.25",
+      "range": "1.0 / 1.0 / 1.0",
       "animeLength": "0",
       "attackTiming": "0",
-      "damageMultiplier": "1.25",
+      "damageMultiplier": "1",
       "coolTime": "0",
       "effectSerial": "EP000S"
     }

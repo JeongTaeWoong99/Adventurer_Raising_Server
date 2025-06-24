@@ -583,16 +583,13 @@ namespace Server
 		/// </summary>
 		private void ScheduleDeathAndRespawn(CommonSession deadSession)
 		{
-			// 사망한 엔티티의 원래 위치 정보 보존 (오브젝트용)
-			var originalPosition = new { X = deadSession.PosX, Y = deadSession.PosY, Z = deadSession.PosZ };
-			
 			// 1단계 - 5초 후 Leave 패킷 전송 (시체 사라짐 효과)
 			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 5초 후 시체 제거
 				() => {
 					// 모든 클라이언트에 Leave 패킷 전송 (시체 사라짐)
 					SendEntityLeavePacket(deadSession);
 					// 2단계 - 추가 5초 후 재생성 스케줄링 (타입별 재생성 방식)
-					ScheduleRespawnAfterLeave(deadSession, originalPosition);
+					ScheduleRespawnAfterLeave(deadSession);
 				},
 				$"사망한 {deadSession.SerialNumber} 시체 제거 (5초 후)",
 				deadSession.SessionId,
@@ -617,21 +614,21 @@ namespace Server
 		}
 
 		/// <summary>
-		/// Leave 후 재생성 스케줄링 - 2단계 재생성 프로세스
-		/// - Leave 패킷 전송 후 5초 뒤 실제 재생성 실행
-		/// - 원래 위치에서 정확히 재생성 (위치 정보 전달)
-		/// - 총 재생성 시간: 10초 (사망 → 5초 → Leave → 5초 → 재생성)
-		/// </summary>
-		private void ScheduleRespawnAfterLeave(CommonSession deadSession, dynamic originalPosition)
-		{
-			// NEW: 2단계 - Leave 후 5초 뒤 재생성 (원래 위치 정보 포함)
-			ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 추가 5초 후 재생성
-				() => { //SpawnManager에 재생성 위임 (원래 위치 정보 전달)
-							SpawnManager.Instance.RespawnAtOriginalPosition(deadSession.SerialNumber, SceneName, originalPosition.X, originalPosition.Y, originalPosition.Z); },
-				   $"사망한 {deadSession.SerialNumber} 재생성 실행 (Leave 후 5초)",
-							deadSession.SessionId,
-							SceneName);
-		}
+        /// Leave 후 재생성 스케줄링 - 2단계 재생성 프로세스 (OPTIMIZED)
+        /// - Leave 패킷 전송 후 5초 뒤 실제 재생성 실행
+        /// - mmNumber로 직접 원래 스폰 정보 참조 (거리 계산 불필요)
+        /// - 총 재생성 시간: 10초 (사망 → 5초 → Leave → 5초 → 재생성)
+        /// </summary>
+        private void ScheduleRespawnAfterLeave(CommonSession deadSession)
+        {
+            // OPTIMIZED: mmNumber로 직접 재생성 (위치 계산 불필요)
+            ScheduleManager.Instance.ScheduleTask(DateTime.UtcNow.AddSeconds(5), // 추가 5초 후 재생성
+                () => { // SpawnManager에 재생성 위임 (mmNumber 기반 빠른 재생성)
+                        SpawnManager.Instance.RespawnByMmNumber(deadSession.MmNumber, SceneName); },
+                   $"사망한 {deadSession.SerialNumber}({deadSession.MmNumber}) 재생성 실행 (Leave 후 5초)",
+                            deadSession.SessionId,
+                            SceneName);
+        }
 		
 		#endregion
 	}

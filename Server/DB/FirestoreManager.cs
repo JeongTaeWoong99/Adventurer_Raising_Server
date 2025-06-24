@@ -43,6 +43,7 @@ public class AttackInfoData
 [Serializable]
 public class MonsterSceneSettingData
 {
+    public string mmNumber;      // NEW: 관리번호 (M01, M02, ...)
     public string sceneName;
     public string serialNumber;
     public string spawnNumber;
@@ -52,6 +53,7 @@ public class MonsterSceneSettingData
 [Serializable]
 public class ObjectSceneSettingData
 {
+    public string mmNumber;      // NEW: 관리번호 (O01, O02, ...)
     public string sceneName;
     public string serialNumber;
     public string makePos;
@@ -59,10 +61,10 @@ public class ObjectSceneSettingData
 [Serializable]
 public class NetworkRoomSceneData
 {
-    // fromScene이름으로 네트워크 Room을 만듬. ※ 단, Unknown은 제외.
-    public string fromScene;
-    public string toScene;       
-    public string spawnPosition; 
+    public string mmNumber;      // 관리번호 (N00, N01, N02, ...)
+    public string type;          // loginToSave, forcedMove, portal
+    public string toScene;       // 이동할 씬 이름
+    public string spawnPosition; // 스폰 위치
 }
 [Serializable]
 public class CharacterInfoList
@@ -87,8 +89,8 @@ public class FirestoreManager
     // 파이어스토어 데이터베이스    
     private FirestoreDb firestore;
     
-    // NetworkRoomSceneData Dictionary (씬 변경 시 스폰 위치 찾기용)
-    private Dictionary<string, NetworkRoomSceneData> _networkRoomSceneDict = new Dictionary<string, NetworkRoomSceneData>();
+    // mmNumber 기반 빠른 검색용 딕셔너리
+    private Dictionary<string, NetworkRoomSceneData> _sceneMmNumberDict = new Dictionary<string, NetworkRoomSceneData>();
 
     // 생성자
     public FirestoreManager()
@@ -202,31 +204,26 @@ public class FirestoreManager
 
             if (sceneListData != null && sceneListData.networkRoomSceneInfos != null)
             {
+                HashSet<string> createdRooms = new HashSet<string>();
+                
                 foreach (NetworkRoomSceneData sceneData in sceneListData.networkRoomSceneInfos)
                 {
-                    
-                    if (!string.IsNullOrEmpty(sceneData.fromScene) && !Program.GameRooms.ContainsKey(sceneData.fromScene))
+                    if (!string.IsNullOrEmpty(sceneData.toScene) && !createdRooms.Contains(sceneData.toScene))
                     {
-                        // Unknown은 제외.
-                        if (sceneData.fromScene.Equals("UnKnown"))
+                        // SavedScene은 동적이므로 룸을 미리 만들지 않음
+                        if (sceneData.toScene == "SavedScene")
                         {
-                            //Console.WriteLine("UnKnown GameRoom 생성 제외");
+                            //Console.WriteLine("SavedScene은 동적 룸이므로 생성하지 않음");
+                            continue;
                         }
-                        else
-                        {
-                            Program.GameRooms.Add(sceneData.fromScene, new GameRoom(sceneData.fromScene, Program.DBManager));
-                            //Console.WriteLine($"GameRoom 생성 : {sceneData.fromScene}");
-                        }
-                    }
-                    else if (Program.GameRooms.ContainsKey(sceneData.fromScene))
-                    {
-                        //Console.WriteLine($"이미 '{sceneData.fromScene}' 이름의 GameRoom이 존재합니다.");
-                    }
-                    else if (string.IsNullOrEmpty(sceneData.fromScene))
-                    {
-                        //Console.WriteLine($"sceneName이 비어있는 NetworkRoomSceneData 항목이 있습니다.");
+                        
+                        Program.GameRooms.Add(sceneData.toScene, new GameRoom(sceneData.toScene, Program.DBManager));
+                        createdRooms.Add(sceneData.toScene);
+                        //Console.WriteLine($"GameRoom 생성: {sceneData.toScene}");
                     }
                 }
+                
+                //Console.WriteLine($"총 {createdRooms.Count}개의 GameRoom 생성 완료");
             }
             else
             {
@@ -280,18 +277,17 @@ public class FirestoreManager
             {
                 foreach (NetworkRoomSceneData sceneData in sceneListData.networkRoomSceneInfos)
                 {
-                    if (!string.IsNullOrEmpty(sceneData.fromScene) && !string.IsNullOrEmpty(sceneData.toScene))
+                    // mmNumber 기반 딕셔너리만 사용
+                    if (!string.IsNullOrEmpty(sceneData.mmNumber))
                     {
-                        // Unity 클라이언트와 동일한 키 형식: "fromScene_toScene"
-                        string compoundKey = $"{sceneData.fromScene}_{sceneData.toScene}";
-                        if (!_networkRoomSceneDict.ContainsKey(compoundKey))
+                        if (!_sceneMmNumberDict.ContainsKey(sceneData.mmNumber))
                         {
-                            _networkRoomSceneDict.Add(compoundKey, sceneData);
-                            //Console.WriteLine($"씬 변경 데이터 추가: {compoundKey} -> {sceneData.spawnPosition}");
+                            _sceneMmNumberDict.Add(sceneData.mmNumber, sceneData);
+                            //Console.WriteLine($"mmNumber 씬 변경 데이터 추가: {sceneData.mmNumber} ({sceneData.type}) -> {sceneData.toScene}");
                         }
                     }
                 }
-                //Console.WriteLine($"NetworkRoomSceneData Dictionary 생성 완료: {_networkRoomSceneDict.Count}개 항목");
+                //Console.WriteLine($"mmNumber 기반 Dictionary 생성 완료: {_sceneMmNumberDict.Count}개 항목");
             }
             else
             {
@@ -304,21 +300,22 @@ public class FirestoreManager
         }
     }
     
-    // 씬 변경 시 스폰 위치 찾기 (Unity 클라이언트와 동일한 로직)
-    public (float x, float y, float z) GetSpawnPosition(string fromScene, string toScene)
+    /// <summary>
+    /// mmNumber 기반 빠른 스폰 위치 검색
+    /// - O(1) 시간복잡도로 즉시 스폰 위치 반환
+    /// - type을 통해 이동 방식 구분 (loginToSave, forcedMove, portal)
+    /// </summary>
+    public (float x, float y, float z, string type, string toScene) GetSpawnPositionByMmNumber(string mmNumber)
     {
-        string compoundKey = $"{fromScene}_{toScene}";
-        
-        if (_networkRoomSceneDict.ContainsKey(compoundKey) && _networkRoomSceneDict[compoundKey] != null)
+        if (_sceneMmNumberDict.TryGetValue(mmNumber, out NetworkRoomSceneData sceneData))
         {
-            var spawnPositionString = _networkRoomSceneDict[compoundKey].spawnPosition;
-            Vector3 posVec = Extension.ParseVector3(spawnPositionString);
-            return (posVec.X, posVec.Y, posVec.Z);
+            Vector3 posVec = Extension.ParseVector3(sceneData.spawnPosition);
+            return (posVec.X, posVec.Y, posVec.Z, sceneData.type, sceneData.toScene);
         }
         else
         {
-            Console.WriteLine($"스폰 위치를 찾을 수 없음: {compoundKey}");
-            return (0f, 0f, 0f); // 기본값
+            Console.WriteLine($"mmNumber로 스폰 위치를 찾을 수 없음: {mmNumber}");
+            return (0f, 0f, 0f, "", ""); // 기본값
         }
     }
 }

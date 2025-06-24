@@ -530,8 +530,7 @@ public class S_BroadcastEntityEnter : IPacket
 }
 public class C_SceneChange : IPacket
 {
-	public string fromScene;
-	public string toScene;
+	public string mmNumber;
 
 	public ushort Protocol { get { return (ushort)PacketID.C_SceneChange; } }
 
@@ -540,14 +539,10 @@ public class C_SceneChange : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		ushort fromSceneLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		ushort mmNumberLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 		count += sizeof(ushort);
-		this.fromScene = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, fromSceneLen);
-		count += fromSceneLen;
-		ushort toSceneLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		this.toScene = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, toSceneLen);
-		count += toSceneLen;
+		this.mmNumber = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, mmNumberLen);
+		count += mmNumberLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -558,14 +553,10 @@ public class C_SceneChange : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_SceneChange), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		ushort fromSceneLen = (ushort)Encoding.Unicode.GetBytes(this.fromScene, 0, this.fromScene.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-		Array.Copy(BitConverter.GetBytes(fromSceneLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		ushort mmNumberLen = (ushort)Encoding.Unicode.GetBytes(this.mmNumber, 0, this.mmNumber.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(mmNumberLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		count += fromSceneLen;
-		ushort toSceneLen = (ushort)Encoding.Unicode.GetBytes(this.toScene, 0, this.toScene.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-		Array.Copy(BitConverter.GetBytes(toSceneLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		count += toSceneLen;
+		count += mmNumberLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
