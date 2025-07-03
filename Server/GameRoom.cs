@@ -1,12 +1,8 @@
 ﻿using ServerCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.IO;
-using Newtonsoft.Json;
 using Server.DB;
-using System.Threading.Tasks;
 
 namespace Server
 { 
@@ -526,7 +522,7 @@ namespace Server
 		}
 		
 		#endregion
-
+		
 		#region ScheduleManager 연동 메서드들 - 역할 분리를 위한 인터페이스
 
 		/// <summary>
