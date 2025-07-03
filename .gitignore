@@ -70,3 +70,12 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Firebase 보안 파일들
+Firebase/*.json
+**/*firebase*.json
+**/*serviceaccount*.json
+
+# 환경 변수 파일
+.env
+appsettings.Production.json

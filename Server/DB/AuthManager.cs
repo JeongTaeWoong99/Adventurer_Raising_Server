@@ -7,6 +7,7 @@ using Google.Apis.Auth.OAuth2;
 using FirebaseAdmin;
 using FirebaseAdmin.Auth;
 using Newtonsoft.Json;
+using System.IO;
 namespace Server.DB;
 
 // Firebase 로그인 응답 클래스
@@ -35,8 +36,23 @@ public class AuthManager
     {
         try
         {
-            // Firebase Admin SDK 초기화
-            string serviceAccountPath = @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json";
+            // 환경 변수에서 먼저 확인
+            string serviceAccountPath = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_PATH");
+            
+            if (string.IsNullOrEmpty(serviceAccountPath))
+            {
+                // 개발 환경용 상대 경로
+                serviceAccountPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Firebase", "d-rpg-server-24c1ffc47d4a.json");
+                serviceAccountPath = Path.GetFullPath(serviceAccountPath);
+            }
+            
+            Console.WriteLine($"🔧 AuthManager: 서비스 계정 파일 경로 설정됨");
+            
+            if (!File.Exists(serviceAccountPath))
+            {
+                Console.WriteLine($"⚠️ Firebase 인증 파일을 찾을 수 없습니다: {serviceAccountPath}");
+                return;
+            }
             
             if (FirebaseApp.DefaultInstance == null)
             {
@@ -45,19 +61,22 @@ public class AuthManager
                     Credential = GoogleCredential.FromFile(serviceAccountPath),
                     ProjectId = "d-rpg-server"
                 });
+                Console.WriteLine("🔥 FirebaseApp 새로 생성됨");
             }
             else
             {
                 app = FirebaseApp.DefaultInstance;
+                Console.WriteLine("🔥 기존 FirebaseApp 인스턴스 사용");
             }
             
             auth = FirebaseAuth.GetAuth(app);
             
-            //Console.WriteLine("Firebase Auth 초기화 완료");
+            Console.WriteLine("✅ Firebase Auth 초기화 완료");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Firebase Auth 초기화 실패: {ex.Message}");
+            Console.WriteLine($"❌ Firebase Auth 초기화 실패: {ex.Message}");
+            Console.WriteLine($"🔍 상세 오류: {ex.StackTrace}");
         }
     }
     

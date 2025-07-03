@@ -95,24 +95,98 @@ public class FirestoreManager
     // 생성자
     public FirestoreManager()
     {
-        // 환경 변수로 인증 정보 지정
-        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Firebase\d-rpg-server-firebase-adminsdk-fbsvc-cc3363d61c.json");
-        firestore = FirestoreDb.Create("d-rpg-server");
+        try
+        {
+            // 기존 환경 변수 초기화
+            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", null);
+            
+            // 환경 변수에서 먼저 확인
+            string credentialsPath = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_PATH");
+            
+            if (string.IsNullOrEmpty(credentialsPath))
+            {
+                // 개발 환경용 상대 경로
+                credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Firebase", "d-rpg-server-24c1ffc47d4a.json");
+                credentialsPath = Path.GetFullPath(credentialsPath);
+            }
+            
+            // 파일 존재 여부 확인
+            if (!File.Exists(credentialsPath))
+            {
+                Console.WriteLine($"⚠️ Firebase 인증 파일을 찾을 수 없습니다: {credentialsPath}");
+                Console.WriteLine("기존 JSON 파일을 사용하여 진행합니다.");
+                return;
+            }
+            
+            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+            
+            Console.WriteLine($"✅ Firebase 인증 파일 설정 완료");
+            Console.WriteLine($"🔧 환경 변수 확인: {Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS") != null}");
+            
+            // 파일 내용 확인
+            string fileContent = File.ReadAllText(credentialsPath);
+            if (fileContent.Contains("d-rpg-server"))
+            {
+                Console.WriteLine("인증 파일 내용 확인 완료");
+            }
+            else
+            {
+                Console.WriteLine("⚠️ 인증 파일 내용이 올바르지 않을 수 있습니다");
+            }
+            
+            // FirestoreDb 초기화
+            firestore = FirestoreDb.Create("d-rpg-server");
+            Console.WriteLine("Firestore 데이터베이스 연결 완료");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FirestoreManager 초기화 실패: {ex.Message}");
+            Console.WriteLine($"상세 오류: {ex.StackTrace}");
+            firestore = null;
+        }
     }
     
     // 초기화
     public async Task Init()
     {
-        // 병렬 실행
-        var tasks = new List<Task>
+        try
         {
-            LoadAndSaveCollectionToJson<CharacterInfoData,        CharacterInfoList>      ("characterInfos",          "CharacterInfoData.json"),
-            LoadAndSaveCollectionToJson<AttackInfoData,           AttackInfoList>         ("attackInfos",             "AttackInfoData.json"),
-            LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json"),
-            LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json"),
-            LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json"),
-        };
-        await Task.WhenAll(tasks);
+            Console.WriteLine("Firestore에서 데이터를 가져오는 중...");
+            
+            // 병렬 실행
+            var tasks = new List<Task>
+            {
+                LoadAndSaveCollectionToJson<CharacterInfoData,        CharacterInfoList>      ("characterInfos",          "CharacterInfoData.json"),
+                LoadAndSaveCollectionToJson<AttackInfoData,           AttackInfoList>         ("attackInfos",             "AttackInfoData.json"),
+                LoadAndSaveCollectionToJson<ObjectSceneSettingData,   ObjectSceneSettingList> ("objectSceneSettingInfos", "ObjectSceneSettingData.json"),
+                LoadAndSaveCollectionToJson<MonsterSceneSettingData,  MonsterSceneSettingList>("monsterSceneSettingInfos","MonsterSceneSettingData.json"),
+                LoadAndSaveCollectionToJson<NetworkRoomSceneData,     NetworkRoomSceneList>   ("networkRoomSceneInfos",   "NetworkRoomSceneData.json"),
+            };
+            await Task.WhenAll(tasks);
+            
+            Console.WriteLine("✅ Firestore 데이터 동기화 완료");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Firestore 접근 실패: {ex.Message}");
+            Console.WriteLine("기존 JSON 파일이 있다면 그것을 사용하여 계속 진행합니다.");
+            
+            // 기존 파일 존재 여부 확인
+            string dataDir = @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data";
+            if (Directory.Exists(dataDir))
+            {
+                var files = Directory.GetFiles(dataDir, "*.json");
+                Console.WriteLine($"📁 {files.Length}개의 기존 JSON 파일을 찾았습니다.");
+                foreach (var file in files)
+                {
+                    Console.WriteLine($"  - {Path.GetFileName(file)}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("⚠️ Data 폴더가 없습니다. 서버가 제대로 작동하지 않을 수 있습니다.");
+            }
+        }
         
         // 룸 세팅
         await CreateGameRoomsBasedOnSceneData();
@@ -129,68 +203,82 @@ public class FirestoreManager
     // 파이어스토리지 최신화
     private async Task LoadAndSaveCollectionToJson<TItem, TList>(string collectionName, string outputFileName) where TItem : new() where TList : new()
     {
-        CollectionReference colRef   = firestore.Collection(collectionName);
-        QuerySnapshot       snapshot = await colRef.GetSnapshotAsync();
-
-        //Console.WriteLine($"[DEBUG] {collectionName} 문서 개수: {snapshot.Documents.Count}");
-
-        List<TItem> items = new List<TItem>();
-        foreach (DocumentSnapshot doc in snapshot.Documents)
+        try
         {
-            if (!doc.Exists)
-                continue;
+            Console.WriteLine($"🔍 '{collectionName}' 컬렉션 접근 시도...");
+            
+            CollectionReference colRef = firestore.Collection(collectionName);
+            QuerySnapshot snapshot = await colRef.GetSnapshotAsync();
 
-            Dictionary<string, object> data = doc.ToDictionary();
-            //Console.WriteLine("[DEBUG] 문서 데이터: " + string.Join(", ", data.Keys));
+            Console.WriteLine($"📊 '{collectionName}' 문서 개수: {snapshot.Documents.Count}");
 
-            TItem item = new TItem();
-
-            foreach (var kv in data)
+            List<TItem> items = new List<TItem>();
+            foreach (DocumentSnapshot doc in snapshot.Documents)
             {
-                string fieldName = kv.Key;
-                object fieldValue = kv.Value;
-
-                // 필드 매핑
-                var field = typeof(TItem).GetField(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (field != null && fieldValue != null)
-                {
-                    string val = fieldValue.ToString();
-                    field.SetValue(item, val);
-                    //Console.WriteLine($"[필드 매핑] {fieldName} → {val}");
+                if (!doc.Exists)
                     continue;
+
+                Dictionary<string, object> data = doc.ToDictionary();
+                //Console.WriteLine("[DEBUG] 문서 데이터: " + string.Join(", ", data.Keys));
+
+                TItem item = new TItem();
+
+                foreach (var kv in data)
+                {
+                    string fieldName = kv.Key;
+                    object fieldValue = kv.Value;
+
+                    // 필드 매핑
+                    var field = typeof(TItem).GetField(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (field != null && fieldValue != null)
+                    {
+                        string val = fieldValue.ToString();
+                        field.SetValue(item, val);
+                        //Console.WriteLine($"[필드 매핑] {fieldName} → {val}");
+                        continue;
+                    }
+
+                    // 프로퍼티 매핑
+                    var prop = typeof(TItem).GetProperty(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (prop != null && prop.CanWrite && fieldValue != null)
+                    {
+                        string val = fieldValue.ToString();
+                        prop.SetValue(item, val);
+                        //Console.WriteLine($"[프로퍼티 매핑] {fieldName} → {val}");
+                        continue;
+                    }
+
+                    //Console.WriteLine($"⚠️ 매핑 실패: {fieldName}");
                 }
 
-                // 프로퍼티 매핑
-                var prop = typeof(TItem).GetProperty(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (prop != null && prop.CanWrite && fieldValue != null)
-                {
-                    string val = fieldValue.ToString();
-                    prop.SetValue(item, val);
-                    //Console.WriteLine($"[프로퍼티 매핑] {fieldName} → {val}");
-                    continue;
-                }
-
-                //Console.WriteLine($"⚠️ 매핑 실패: {fieldName}");
+                items.Add(item);
             }
 
-            items.Add(item);
+            // JSON 구조 래핑
+            object wrapper = new TList();
+            var listField = typeof(TList).GetFields()[0];
+            listField.SetValue(wrapper, items);
+
+            string jsonData = JsonConvert.SerializeObject(wrapper, Formatting.Indented);
+
+            // 저장 경로
+            string saveDir = @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data";
+            string path = Path.Combine(saveDir, outputFileName);
+            Directory.CreateDirectory(saveDir);
+
+            File.WriteAllText(path, jsonData);
+
+            Console.WriteLine($"✅ Firestore '{collectionName}' → JSON 저장 완료: {Path.GetFileName(outputFileName)}");
         }
-
-        // JSON 구조 래핑
-        object wrapper   = new TList();
-        var    listField = typeof(TList).GetFields()[0];
-        listField.SetValue(wrapper, items);
-
-        string jsonData = JsonConvert.SerializeObject(wrapper, Formatting.Indented);
-
-        // 저장 경로
-        string saveDir = @"C:\Users\ASUS\Desktop\Unity\Project\3D_RPG_Server(Git)\Data";
-        string path    = Path.Combine(saveDir, outputFileName);
-        Directory.CreateDirectory(saveDir);
-
-        File.WriteAllText(path, jsonData);
-
-        // Console.WriteLine($"✅ Firestore '{collectionName}' → JSON 저장 완료: {path}");
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ '{collectionName}' 접근 실패: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"   상세 오류: {ex.InnerException.Message}");
+            }
+            throw;
+        }
     }
     
     // 룸 세팅 
