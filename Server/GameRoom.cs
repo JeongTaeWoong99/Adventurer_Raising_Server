@@ -1,6 +1,7 @@
 ﻿using ServerCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Server.DB;
 
@@ -28,7 +29,6 @@ namespace Server
 		{
 			SceneName         = sceneName;
 			Program.DBManager = dbManager;
-			//Console.WriteLine($"GameRoom '{SceneName}' 초기화 완료.");
 		}
 		
 		public void Push(Action job)
@@ -73,6 +73,7 @@ namespace Server
 			S_BroadcastEntityInfoChange change = new S_BroadcastEntityInfoChange {
 				ID            = session.SessionId,
 				entityType    = session.EntityType,
+				currentExp    = session.currentExp,
 				currentLevel  = session.CurrentLevel,
 				currentHp     = session.CurrentHP,
 				live          = session.Live,
@@ -117,7 +118,227 @@ namespace Server
 			};
 			Broadcast(mv.Write());
 		}
+		
+		// 공격자 타입에 따른 타겟 목록 반환
+		List<CommonSession> GetAttackTargets(int attackerEntityType)
+		{
+			var targets = new List<CommonSession>();
+				
+			// 플레이어 공격 -> 오브젝트/몬스터 타겟
+			if (attackerEntityType == (int)Define.Layer.Player)
+				targets.AddRange(_commonSessions.Where(s => s.EntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster));
+			// 오브젝트/몬스터 공격 -> 플레이어 타겟
+			else if (attackerEntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster)
+				targets.AddRange(_commonSessions.Where(s => s.EntityType == (int)Define.Layer.Player));
+			
+			return targets;
+		}
+		
+		// OBB(회전된 박스) vs 구(원) 충돌 판정 (XZ 평면만, Y축 제외)
+		bool IsInAttackRange(C_EntityAttackCheck packet, CommonSession target)
+		{
+			// 동작 원리:
+			// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환
+			// 2. 로컬 좌표계에서 구의 중심에서 OBB까지의 최단 거리 계산
+			// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
+			// 
+			// 장점:
+			// - OBB vs OBB보다 계산이 단순함
+			// - 타겟의 크기를 정확하게 고려
+			// - Y축 체크를 제외하여 성능 최적화
+			// - Unity/Unreal의 기본 콜라이더와 호환성이 좋음
+			//
+			// attackSerial을 통해 공격 정보 가져오기
+			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
+			if (attackInfo == null)
+			{
+				Console.WriteLine($"공격 정보를 찾을 수 없습니다: {packet.attackSerial}");
+				return false;
+			}
+			
+			// range 정보 파싱 (예: "1.0 / 1.0 / 1.0")
+			string[] rangeParts = attackInfo.range.Split('/');
+			if (rangeParts.Length != 3)
+			{
+				Console.WriteLine($"잘못된 range 형식: {attackInfo.range}");
+				return false;
+			}
+			
+			float rangeX = float.Parse(rangeParts[0].Trim());
+			float rangeZ = float.Parse(rangeParts[2].Trim()); 
+			
+			float checkRangeX = rangeX * 2; // range가 반지름이면 2를 곱해 전체 길이로 변환
+			float checkRangeZ = rangeZ * 2;
+			
+			// 공격 박스의 중심점과 크기(Y축 제외)
+			float centerX   = packet.attackCenterX;
+			float centerZ   = packet.attackCenterZ;
+			float rotationY = packet.rotationY;
+			
+			// 타겟의 현재 위치와 반지름(Y축 제외)
+			float targetX      = target.PosX;
+			float targetZ      = target.PosZ;
+			float targetRadius = target.Body_Size; // characterInfos의 body_Size를 세션에 B_Size로 세팅함
+			
+			// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환 (XZ 평면만)
+			// 1.1 공격 중심점 기준 상대 좌표 계산
+			float relativeX = targetX - centerX;
+			float relativeZ = targetZ - centerZ;
+			
+			// 1.2 Y축 회전 행렬 적용 (라디안으로 변환)
+			float cosY = (float)Math.Cos(-rotationY * Math.PI / 180.0f);
+			float sinY = (float)Math.Sin(-rotationY * Math.PI / 180.0f);
+			
+			// 1.3 회전된 좌표계로 변환 (XZ 평면만)
+			float localX = relativeX * cosY - relativeZ * sinY;
+			float localZ = relativeX * sinY + relativeZ * cosY;
+			
+			// 2. OBB의 각 면까지의 최단 거리 계산 (XZ 평면만)
+			float halfX = checkRangeX * 0.5f;
+			float halfZ = checkRangeZ * 0.5f;
+			
+			// 2.1 각 축에서의 최단 거리 계산 (XZ 평면만)
+			float dx = Math.Max(0, Math.Abs(localX) - halfX);
+			float dz = Math.Max(0, Math.Abs(localZ) - halfZ);
+			
+			// 2.2 구의 중심에서 OBB까지의 최단 거리 계산 (XZ 평면만)
+			float distanceSquared = dx * dx + dz * dz;
+			
+			// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
+			// Console.WriteLine(distanceSquared + " <= (" + targetRadius + " * " + targetRadius + ")");
+			return distanceSquared <= (targetRadius * targetRadius);
+		}
+		
+		// 히트 처리 (체력 감소, 애니메이션, 위치 동기화, 결과 추가)
+		void ProcessHit(CommonSession attacker, CommonSession target, int damage, C_EntityAttackCheck attackCheck, S_BroadcastEntityAttackResult attackResult)
+		{
+			// 이미 사망 상태이거나 HP가 0인 타겟은 데미지 처리 제외
+			if (!target.Live || target.CurrentHP <= 0)
+				return;
+			
+			// 서버에서 타겟의 HP에 따라 상태 변경 및 브로드케스트
+			target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
+			
+			// 타겟 생존
+			if (target.CurrentHP  > 0)
+			{
+				target.AnimationId = (int)Define.Anime.Hit;																		  // 상태 변경
+				ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);							      // ScheduleManager에 애니메이션 상태 등록 및 자동 전환 관리(=> 플레이어는 제외)
+				if (target.AnimationId == (int)Define.Anime.Run) ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);  // 몬스터가 런 중에 히트를 당했으면, 이동한 시간 만큼 이동
+				StartHitKnockBack(target, attackCheck.attackCenterX, attackCheck.attackCenterZ);											  // 히트 넉백 이동 시작 (몬스터/오브젝트) : 공격 중심 좌표(packet.poxX/Z)를 사용해 넉백 위치 결정
+			}
+			// 타겟 사망
+			else if (target.CurrentHP == 0)
+			{	
+				target.Live        = false;										  // 상태 변경
+				target.AnimationId = (int)Define.Anime.Death;					  // 상태 변경
+				ScheduleManager.Instance.RemoveAnimationState(target.SessionId);  // ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
+				ScheduleDeathAndRespawn(target);								  // 사망 후, 재생성 스케줄링. 10초 후 SpawnManager에 재생성 요청(=> 플레이어는 제외)
+					
+				// 플레이어가 몬스터 사망시키면, EXP 관리 작업 진행
+				// EXP가 레벨 필요 EXP를 넘어감 => 세션 정보 변경 및 브로드케스트
+				// EXP가 레벨 필요 EXP보다 적음 => 세션 정보 변경 및 단일 세그먼트 전송
+				if(attacker.EntityType == (int)Define.Layer.Player && target.EntityType == (int)Define.Layer.Monster)
+					ProcessPlayerExpGain(attacker, target);
+					
+				// 플레이어의 경우, 사망 후, DB에 저장된 씬의 이름을 Village로 변경.
+				if (target.EntityType == (int)Define.Layer.Player && target is ClientSession playerSession)
+					_ = Program.DBManager._realTime.UpdateUserSceneAsync(playerSession.email, "Village");
+			}
+			
+			// 세션 상태 변경 브로드케스트
+			EntityInfoChange(target);
+			
+			// 서버 넉백과 동일한 방향 계산 (target -> hitCenter 의 반대)
+			float rawDirX = target.PosX - attackCheck.attackCenterX;
+			float rawDirZ = target.PosZ - attackCheck.attackCenterZ;
+			float mag     = (float)Math.Sqrt(rawDirX * rawDirX + rawDirZ * rawDirZ);
+			float dirX    = (mag > 0.0001f) ? rawDirX / mag : 0f;
+			float dirZ    = (mag > 0.0001f) ? rawDirZ / mag : 0f;		
+			var hitTarget = new S_BroadcastEntityAttackResult.Entity {
+				targetID         = target.SessionId,
+				targetEntityType = target.EntityType,
+				hitMoveDirX      = dirX,
+				hitMoveDirY      = 0,
+				hitMoveDirZ      = dirZ,
+			};
+			attackResult.entitys.Add(hitTarget);
+		}
 
+		// 플레이어 경험치 획득 처리
+		public void ProcessPlayerExpGain(CommonSession attacker, CommonSession deadMonster)
+		{
+			// 몬스터별 경험치 정보를 JSON에서 가져오기 (몬스터 시리얼 넘버 + 레벨 기반)
+			int expGain = Program.DBManager.GetDropExp(deadMonster.SerialNumber, deadMonster.CurrentLevel);
+			if (expGain <= 0)
+				return; // 경험치가 0이면 처리하지 않음
+			
+			// 세션에 현재 경험치 갱신
+			attacker.currentExp += expGain;
+			
+			// 현재 레벨의 필요 경험치를 JSON에서 가져오기 (플레이어 시리얼 넘버 + 레벨 기반)
+			int needEXP = Program.DBManager.GetNeedExp(attacker.SerialNumber, attacker.CurrentLevel);
+			if (needEXP <= 0)
+				return; // 필요 경험치 정보가 없으면 처리하지 않음
+			
+			// 레벨업 확인 및 처리
+			if (attacker.currentExp >= needEXP)
+			{
+				// 다음 레벨에 대한 정보를 찾기
+				CharacterInfoData newLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel + 1);
+				
+				// 다음 레벨에 대한 정보가 있는 경우
+				if (newLevelInfo != null)
+				{
+					// 레벨업 처리
+					attacker.CurrentLevel++;
+					attacker.currentExp = 0;
+
+					// 새로운 레벨의 스탯 정보로 업데이트
+					if (int.TryParse(newLevelInfo.maxHp, out int newMaxHP))
+					{
+						attacker.MaxHP     = newMaxHP;
+						attacker.CurrentHP = newMaxHP; // 레벨업 시 체력 완전 회복
+					}
+					
+					if (int.TryParse(newLevelInfo.normalAttackDamage, out int newDamage))
+					{
+						attacker.Damage = newDamage;
+					}
+					
+					if (float.TryParse(newLevelInfo.moveSpeed, out float newMoveSpeed))
+					{
+						attacker.moveSpeed = newMoveSpeed;
+					}
+				}
+				// 다음 레벨에 대한 정보가 없는 경우
+				else
+				{
+					CharacterInfoData currentLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel);
+					attacker.currentExp = int.Parse(currentLevelInfo.needEXP); // 최고값 유지만 하기
+					Console.WriteLine($"레벨업 스탯 정보를 찾을 수 없습니다: {attacker.SerialNumber} 레벨 {attacker.CurrentLevel}");
+				}
+				
+				// EXP가 레벨 필요 EXP를 넘어감 => 세션 정보 변경 및 브로드케스트
+				EntityInfoChange(attacker);
+			}
+			// Exp Up 및 처리
+			else
+			{
+				// EXP가 레벨 필요 EXP보다 적음 => 세션 정보 변경 및 단일 세그먼트 전송
+				S_BroadcastEntityInfoChange expChange = new S_BroadcastEntityInfoChange {
+					ID            = attacker.SessionId,
+					entityType    = attacker.EntityType,
+					currentExp    = attacker.currentExp,
+					currentLevel  = attacker.CurrentLevel,
+					currentHp     = attacker.CurrentHP,
+					live          = attacker.Live,
+					invincibility = attacker.Invincibility
+				};
+				attacker.Send(expChange.Write());
+			}
+		}
+		
 		#endregion
 
 		#region  관리 영역
@@ -300,13 +521,13 @@ namespace Server
 			Broadcast(anime.Write());
 		}
 		
-		// NEW: 플레이어 애니메이션 처리 (ScheduleManager 연동)
+		// 공격 애니메이션 + 방향 + 공격넘버 처리
 		public void AttackAnimation(CommonSession session, C_EntityAttackAnimation packet)
 		{
 			// 애니메이션 바꿔주고
 			session.AnimationId = packet.animationID;
 			
-			// NEW: ScheduleManager에 공격 애니메이션 상태 등록 (공격 번호 포함, 자동 타이밍 관리)
+			// ScheduleManager에 공격 애니메이션 상태 등록 (플레이어 제외 / 공격 번호 포함, 자동 타이밍 관리)
 			ScheduleManager.Instance.SetAnimationState(session, Define.Anime.Attack, packet.attackAnimeNumID);
 			
 			// 모두에게 알리기 위해, 대기 목록에 추가
@@ -322,204 +543,46 @@ namespace Server
 			Broadcast(attackAnimation.Write());	
 		}
 		
-		// 플레이어 애니메이션 처리
+		// 공격 유효 처리
 		public void AttackCheckToAttackResult(CommonSession session, C_EntityAttackCheck packet)
 		{	
-			// 지역 메서드 1 : 공격자 타입에 따른 타겟 목록 반환
-			List<CommonSession> GetAttackTargets(int attackerEntityType)
-			{
-				var targets = new List<CommonSession>();
-				
-				// 플레이어 공격 -> 오브젝트/몬스터 타겟
-				if (attackerEntityType == (int)Define.Layer.Player)
-					targets.AddRange(_commonSessions.Where(s => s.EntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster));
-				// 오브젝트/몬스터 공격 -> 플레이어 타겟
-				else if (attackerEntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster)
-					targets.AddRange(_commonSessions.Where(s => s.EntityType == (int)Define.Layer.Player));
-			
-				return targets;
-			}
-			
-			// 지역 메서드 2 : OBB(회전된 박스) vs 구(원) 충돌 판정 (XZ 평면만, Y축 제외)
-			bool IsInAttackRange(C_EntityAttackCheck packet, CommonSession target)
-			{
-				// 동작 원리:
-				// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환
-				// 2. 로컬 좌표계에서 구의 중심에서 OBB까지의 최단 거리 계산
-				// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
-				// 
-				// 장점:
-				// - OBB vs OBB보다 계산이 단순함
-				// - 타겟의 크기를 정확하게 고려
-				// - Y축 체크를 제외하여 성능 최적화
-				// - Unity/Unreal의 기본 콜라이더와 호환성이 좋음
-			
-				// attackSerial을 통해 공격 정보 가져오기
-				AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
-				if (attackInfo == null)
-				{
-					Console.WriteLine($"공격 정보를 찾을 수 없습니다: {packet.attackSerial}");
-					return false;
-				}
-				
-				// range 정보 파싱 (예: "1.0 / 1.0 / 1.0")
-				string[] rangeParts = attackInfo.range.Split('/');
-				if (rangeParts.Length != 3)
-				{
-					Console.WriteLine($"잘못된 range 형식: {attackInfo.range}");
-					return false;
-				}
-				
-				float rangeX = float.Parse(rangeParts[0].Trim());
-				float rangeZ = float.Parse(rangeParts[2].Trim()); 
-				
-				float checkRangeX = rangeX * 2; // range가 반지름이면 2를 곱해 전체 길이로 변환
-				float checkRangeZ = rangeZ * 2;
-				
-				// 공격 박스의 중심점과 크기(Y축 제외)
-				float centerX   = packet.attackCenterX;
-				float centerZ   = packet.attackCenterZ;
-				float rotationY = packet.rotationY;
-				
-				// 타겟의 현재 위치와 반지름(Y축 제외)
-				float targetX      = target.PosX;
-				float targetZ      = target.PosZ;
-				float targetRadius = target.Body_Size; // characterInfos의 body_Size를 세션에 B_Size로 세팅함
-				
-				// 1. 타겟의 위치를 공격 박스의 로컬 좌표계로 변환 (XZ 평면만)
-				// 1.1 공격 중심점 기준 상대 좌표 계산
-				float relativeX = targetX - centerX;
-				float relativeZ = targetZ - centerZ;
-				
-				// 1.2 Y축 회전 행렬 적용 (라디안으로 변환)
-				float cosY = (float)Math.Cos(-rotationY * Math.PI / 180.0f);
-				float sinY = (float)Math.Sin(-rotationY * Math.PI / 180.0f);
-				
-				// 1.3 회전된 좌표계로 변환 (XZ 평면만)
-				float localX = relativeX * cosY - relativeZ * sinY;
-				float localZ = relativeX * sinY + relativeZ * cosY;
-				
-				// 2. OBB의 각 면까지의 최단 거리 계산 (XZ 평면만)
-				float halfX = checkRangeX * 0.5f;
-				float halfZ = checkRangeZ * 0.5f;
-				
-				// 2.1 각 축에서의 최단 거리 계산 (XZ 평면만)
-				float dx = Math.Max(0, Math.Abs(localX) - halfX);
-				float dz = Math.Max(0, Math.Abs(localZ) - halfZ);
-				
-				// 2.2 구의 중심에서 OBB까지의 최단 거리 계산 (XZ 평면만)
-				float distanceSquared = dx * dx + dz * dz;
-				
-				// 3. 최단 거리가 타겟의 반지름보다 작으면 충돌
-				// Console.WriteLine(distanceSquared + " <= (" + targetRadius + " * " + targetRadius + ")");
-				return distanceSquared <= (targetRadius * targetRadius);
-			}
-			
-			// 지역 메서드 3 : 히트 처리 (체력 감소, 애니메이션, 위치 동기화, 결과 추가)
-			void ProcessHit(CommonSession target, int damage, S_BroadcastEntityAttackResult attackResult)
-			{
-				// 이미 사망 상태이거나 HP가 0인 타겟은 데미지 처리 제외
-				if (!target.Live || target.CurrentHP <= 0)
-				{
-					Console.WriteLine($"[ProcessHit] {target.NickName}({target.SessionId})는 이미 사망 상태 - 데미지 처리 제외");
-					return;
-				}
-				
-				// 타겟의 서버에서 상태 변경 및 브로드케스트
-				target.CurrentHP = Math.Max(0, target.CurrentHP - damage);
-				if (target.CurrentHP  > 0)
-				{
-					target.AnimationId = (int)Define.Anime.Hit;
-					// ScheduleManager에 애니메이션 상태 등록 및 자동 전환 관리(=> 플레이어는 제외)
-					ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
-					// 몬스터가 런 중에 히트를 당했으면, 이동한 시간 만큼 이동
-					if (target.AnimationId == (int)Define.Anime.Run) ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
-					// 히트 넉백 이동 시작 (몬스터/오브젝트) : 공격 중심 좌표(packet.poxX/Z)를 사용해 넉백 위치 결정
-					StartHitKnockBack(target, packet.attackCenterX, packet.attackCenterZ);
-				}
-				else if (target.CurrentHP == 0)
-				{
-					target.Live        = false;
-					target.AnimationId = (int)Define.Anime.Death;
-					// ScheduleManager에서 애니메이션 상태 제거 (사망으로 더 이상 관리 불필요)
-					ScheduleManager.Instance.RemoveAnimationState(target.SessionId);
-					// 사망 후, 재생성 스케줄링. 10초 후 SpawnManager에 재생성 요청(=> 플레이어는 제외)
-					ScheduleDeathAndRespawn(target);
-					
-					// 사망 후, 플레이어는 DB에 저장된 씬의 이름을 Village로 변경.
-					if (target.EntityType == (int)Define.Layer.Player && target is ClientSession playerSession)
-					{
-						_ = Program.DBManager._realTime.UpdateUserSceneAsync(playerSession.email, "Village");
-						Console.WriteLine($"[GameRoom] 플레이어 {playerSession.NickName}({playerSession.SessionId}) 사망 - DB 씬을 Village로 변경");
-					}
-				}
-				EntityInfoChange(target);
-				
-				// 서버 넉백과 동일한 방향 계산 (target -> hitCenter 의 반대)
-				float rawDirX = target.PosX - packet.attackCenterX;
-				float rawDirZ = target.PosZ - packet.attackCenterZ;
-				float mag = (float)Math.Sqrt(rawDirX * rawDirX + rawDirZ * rawDirZ);
-				float dirX = (mag > 0.0001f) ? rawDirX / mag : 0f;
-				float dirZ = (mag > 0.0001f) ? rawDirZ / mag : 0f;
-
-				var hitTarget = new S_BroadcastEntityAttackResult.Entity {
-					targetID         = target.SessionId,
-					targetEntityType = target.EntityType,
-					hitMoveDirX      = dirX,
-					hitMoveDirY      = 0,
-					hitMoveDirZ      = dirZ,
-				};
-				attackResult.entitys.Add(hitTarget);
-				//Console.WriteLine($"[ProcessHit] targetId={target.SessionId} dir=({dirX:F3},{dirZ:F3}) attackCenter=({packet.attackCenterX:F2},{packet.attackCenterZ:F2}) targetPos=({target.PosX:F2},{target.PosZ:F2})");
-			}
-			
 			// attackSerial을 통해 공격 정보 가져오기
 			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
 			if (attackInfo == null)
-			{
-				//Console.WriteLine($"공격 정보를 찾을 수 없습니다: {packet.attackSerial}");
 				return;
-			}
 			
+			// 어택결과 패킷 생성
 			S_BroadcastEntityAttackResult attackResult = new S_BroadcastEntityAttackResult {
 				attackerID         = session.SessionId,
 				attackerEntityType = session.EntityType,
 				effectSerial       = attackInfo.effectSerial
 			};
+			
 			// 데미지 계산 (기본 공격력 * 데미지 배수)
 			float baseDamage       = session.Damage;
 			float damageMultiplier = float.Parse(attackInfo.damageMultiplier);
-			int finalDamage        = (int)(baseDamage * damageMultiplier);
+			int   finalDamage      = (int)(baseDamage * damageMultiplier);
 			attackResult.damage    = finalDamage;
 		
 			// 공격자 타입에 따른 타겟 필터링 및 처리
 			var targets = GetAttackTargets(session.EntityType);
 			foreach (var target in targets)
 			{
-				// 사망, 무적, HP 0 상태 체크
+				// 사망, 무적, HP 0 상태 => 넘어가기
 				if (!target.Live || target.Invincibility || target.CurrentHP <= 0)
-				{
-					//Console.WriteLine(target.NickName + "이 사망 or 무적 or HP 0이라 체크 제외");
 					continue;
-				}
 				
+				// 유효 체크 및 히트 로직 실행
 				if (IsInAttackRange(packet, target))
-				{
-					ProcessHit(target, finalDamage, attackResult);
-				}
-				else
-				{
-					string attackerType = session.EntityType == (int)Define.Layer.Player ? "플레이어" : "오몬";
-					//Console.WriteLine($"{attackerType} 공격이 {target.SessionId}에 X!");
-				}
+					ProcessHit(session, target, finalDamage, packet, attackResult);
 			}
 			
 			// 공격 결과 브로드캐스트
 			if (attackResult.entitys.Count > 0)
-			{
 				Broadcast(attackResult.Write());
-			}
 		}
+
+
 		
 		#endregion
 		

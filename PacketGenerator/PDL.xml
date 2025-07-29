@@ -105,6 +105,7 @@
     <packet name = "S_BroadcastEntityInfoChange">
         <int  name   = "ID"/>
         <int  name   = "entityType"/>
+        <int  name   = "currentExp"/>
         <int  name   = "currentLevel"/>
         <int  name   = "currentHp"/>
         <bool name   = "live"/>

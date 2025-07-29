@@ -2,7 +2,6 @@
 using Firebase.Database.Query;
 using System;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 namespace Server.DB;
 
 public class DefaultData
@@ -21,18 +20,17 @@ public class DefaultData
 	public string savedPosition;	
 }
 
-public class RealTimeManager
+ public class RealTimeManager
 {
 	// Firebase Realtime Database 클라이언트
 	private FirebaseClient firebaseClient;
 	
-	// 생성자
+	// 생성자 및 초기화
 	public RealTimeManager()
 	{
 		string projectId   = "d-rpg-server";
 		string firebaseUrl = $"https://{projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/";
 		firebaseClient = new FirebaseClient(firebaseUrl);
-		// Console.WriteLine($"Firebase Realtime Database 초기화 완료: {firebaseUrl}");
 	}
 	
 	// 기본 캐릭터 데이터 저장 메서드
@@ -86,27 +84,20 @@ public class RealTimeManager
 	{
 		try
 		{
-			// 전체 이메일을 고유 식별자로 사용하되, Firebase 키로 사용할 수 있도록 문자 치환
-			// @ -> _AT_, . -> _DOT_
 			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
-			
-			// Firebase Realtime Database에서 사용자 데이터 가져오기
-			var userData = await firebaseClient.Child("Users").Child(userID).OnceSingleAsync<DefaultData>();
+			var   userData = await firebaseClient.Child("Users").Child(userID).OnceSingleAsync<DefaultData>();
 			
 			if (userData != null)
 			{
-				// Console.WriteLine($"사용자 데이터 가져오기 성공: {userID} (원본 이메일: {email})");
 				return userData;
 			}
 			else
 			{
-				// Console.WriteLine($"사용자 데이터가 존재하지 않음: {userID} (원본 이메일: {email})");
 				return null;
 			}
 		}
 		catch (Exception e)
 		{
-			// Console.WriteLine($"사용자 데이터 가져오기 실패: {e.Message}");
 			return null;
 		}
 	}
@@ -116,19 +107,13 @@ public class RealTimeManager
 	{
 		try
 		{
-			// 전체 이메일을 고유 식별자로 사용하되, Firebase 키로 사용할 수 있도록 문자 치환
-			// @ -> _AT_, . -> _DOT_
 			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
-			
-			// Firebase Realtime Database에서 savedScene 업데이트
 			await firebaseClient.Child("Users").Child(userID).Child("savedScene").PutAsync($"\"{newScene}\"");
 			
-			// Console.WriteLine($"사용자 씬 업데이트 성공: {userID} -> {newScene}");
 			return true;
 		}
 		catch (Exception e)
 		{
-			// Console.WriteLine($"사용자 씬 업데이트 실패: {e.Message}");
 			return false;
 		}
 	}
@@ -138,20 +123,78 @@ public class RealTimeManager
 	{
 		try
 		{
-			// 전체 이메일을 고유 식별자로 사용하되, Firebase 키로 사용할 수 있도록 문자 치환
-			// @ -> _AT_, . -> _DOT_
 			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
-			
-			// Firebase Realtime Database에서 savedPosition 업데이트
 			await firebaseClient.Child("Users").Child(userID).Child("savedPosition").PutAsync($"\"{newPosition}\"");
 			
-			// Console.WriteLine($"사용자 위치 업데이트 성공: {userID} -> {newPosition}");
 			return true;
 		}
 		catch (Exception e)
 		{
-			// Console.WriteLine($"사용자 위치 업데이트 실패: {e.Message}");
 			return false;
 		}
 	}
+	
+	// 사용자의 newHp 업데이트 메서드
+	public async Task<bool> UpdateUserHpAsync(string email, string newHp)
+	{
+		try
+		{
+			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
+			await firebaseClient.Child("Users").Child(userID).Child("currentHp").PutAsync($"\"{newHp}\"");
+			
+			return true;
+		}
+		catch (Exception e)
+		{
+			return false;
+		}
+	}
+	
+	// 사용자의 currentExp 업데이트 메서드
+	public async Task<bool> UpdateUserExpAsync(string email, string newExp)
+	{
+		try
+		{
+			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
+			await firebaseClient.Child("Users").Child(userID).Child("currentExp").PutAsync($"\"{newExp}\"");
+			
+			return true;
+		}
+		catch (Exception e)
+		{
+			return false;
+		}
+	}
+	
+	// 사용자의 currentLevel 업데이트 메서드
+	public async Task<bool> UpdateLevelAsync(string email, string newLevel)
+	{
+		try
+		{
+			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
+			await firebaseClient.Child("Users").Child(userID).Child("currentLevel").PutAsync($"\"{newLevel}\"");
+			
+			return true;
+		}
+		catch (Exception e)
+		{
+			return false;
+		}
+	}
+	
+	// 사용자의 currentGold 업데이트 메서드
+	public async Task<bool> UpdateGoldAsync(string email, string newGold)
+	{
+		try
+		{
+			string userID = email.Replace("@", "_AT_").Replace(".", "_DOT_");
+			await firebaseClient.Child("Users").Child(userID).Child("currentGold").PutAsync($"\"{newGold}\"");
+			
+			return true;
+		}
+		catch (Exception e)
+		{
+			return false;
+		}
+	}	
 }

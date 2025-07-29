@@ -100,6 +100,8 @@ namespace Server
                 newSession.hitLength = hitLen;
             if (float.TryParse(info.findRadius, out float findRad))
                 newSession.findRadius = findRad;
+            if (int.TryParse(info.dropExp, out int dExp))
+                newSession.dropExp = dExp;
                 
             // 애니메이션 정보는 AttackInfoData에서 실시간으로 참조하므로 별도 설정 불필요
 
@@ -182,6 +184,8 @@ namespace Server
                     newSession.hitLength = hitLen;
                 if (float.TryParse(info.findRadius, out float findRad))
                     newSession.findRadius = findRad;
+                if (int.TryParse(info.dropExp, out int dExp))
+                    newSession.dropExp = dExp;
                     
                 // 애니메이션 정보는 AttackInfoData에서 실시간으로 참조하므로 별도 설정 불필요
 
@@ -302,6 +306,8 @@ namespace Server
                 session.hitLength = hitLen;
             if (float.TryParse(info.findRadius, out float findRad))
                 session.findRadius = findRad;
+            if (int.TryParse(info.dropExp, out int dExp))
+                session.dropExp = dExp;
         }
 
         /// <summary>

@@ -107,4 +107,28 @@ public class DBManager
 		CharacterInfoDict.TryGetValue(key, out CharacterInfoData characterInfo);
 		return characterInfo;
 	}
+	
+	// 플레이어의 특정 레벨에서 필요한 경험치 가져오기
+	public int GetNeedExp(string serialNumber, int level)
+	{
+		string key = $"{serialNumber}_{level}";
+		if (CharacterInfoDict.TryGetValue(key, out CharacterInfoData characterInfo))
+		{
+			if (int.TryParse(characterInfo.needEXP, out int needExp))
+				return needExp;
+		}
+		return 0; // 데이터가 없으면 0 반환
+	}
+	
+	// 몬스터가 드롭하는 경험치 가져오기
+	public int GetDropExp(string serialNumber, int level)
+	{
+		string key = $"{serialNumber}_{level}";
+		if (CharacterInfoDict.TryGetValue(key, out CharacterInfoData characterInfo))
+		{
+			if (int.TryParse(characterInfo.dropExp, out int dropExp))
+				return dropExp;
+		}
+		return 0; // 데이터가 없으면 0 반환
+	}
 }

@@ -164,14 +164,14 @@ public class AuthManager
                         savedScene    = userData.savedScene,
                     };
                     session.Send(loginResult.Write());
-                    
+                        
                     // 저장된 정보로 내 세션에 세팅해준다.
 					session.email         = userData.email;
                     session.SerialNumber  = userData.serialNumber;
                     session.NickName      = userData.nickname;
                     session.CurrentLevel  = int.Parse(userData.currentLevel);
                     session.CurrentHP     = int.Parse(userData.currentHp);
-                    session.CurrentExp    = int.Parse(userData.currentExp);
+                    session.currentExp    = int.Parse(userData.currentExp);
                     session.CurrentGold   = int.Parse(userData.currentGold);
                     Vector3 savedPosition = Extension.ParseVector3(userData.savedPosition);
                     session.PosX = savedPosition.X;

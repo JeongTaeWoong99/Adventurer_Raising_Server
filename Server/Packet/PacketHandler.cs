@@ -63,13 +63,12 @@ class PacketHandler
 			switch (type)
 			{
 				case "LoginToSave": // 리얼타임 데이터베이스를 통해, 저장된 savedScene를 받아서, toScene에 넣어주기
-					// 사망 상태 체크 후 복구
-					if (clientSession.CurrentHP <= 0 || !clientSession.Live)
+					if (clientSession.CurrentHP <= 0 || !clientSession.Live)	// 사망 상태 체크 후 복구
 					{
-						clientSession.CurrentHP = clientSession.MaxHP;
-						clientSession.Live = true;
+						clientSession.CurrentHP     = clientSession.MaxHP;
+						clientSession.Live          = true;
 						clientSession.Invincibility = false;
-						clientSession.AnimationId = 0;
+						clientSession.AnimationId   = 0;
 						Console.WriteLine($"[LoginToSave] 플레이어 {clientSession.NickName} 사망 상태 복구 완료");
 					}
 					// 정상적인 LoginToSave 흐름 (사망 상태든 아니든 동일하게 처리)
@@ -77,13 +76,12 @@ class PacketHandler
 					break;
 					
 				case "ForcedMove":  // mmNumber에 해당하는 toScene 사용 (마을로 돌아가기 버튼 또는 일반 워프)
-					// 사망 상태인 경우에만 상태 복구
-					if (clientSession.CurrentHP <= 0 || !clientSession.Live)
+					if (clientSession.CurrentHP <= 0 || !clientSession.Live)	// 사망 상태인 경우에만 상태 복구
 					{
-						clientSession.CurrentHP = clientSession.MaxHP;
-						clientSession.Live = true;
+						clientSession.CurrentHP     = clientSession.MaxHP;
+						clientSession.Live          = true;
 						clientSession.Invincibility = false;
-						clientSession.AnimationId = 0;
+						clientSession.AnimationId   = 0;
 						Console.WriteLine($"[ForcedMove] 플레이어 {clientSession.NickName} 사망 상태 복구 완료");
 					}
 					HandleFixedRandomMove(clientSession, spawnX, spawnY, spawnZ, toScene, mmNumber, "ForcedMove");
@@ -125,11 +123,9 @@ class PacketHandler
 		}
 	}
 	
-	/// <summary>
 	/// LoginToSave: 로그인 시 저장된 씬으로 이동
 	/// - 저장된 씬이 없거나 UnKnown이면 Village로 이동
 	/// - 저장된 위치가 있으면 해당 위치로
-	/// </summary>
 	private static async Task<string> HandleLoginToSaveMove(ClientSession clientSession, float spawnX, float spawnY, float spawnZ, string toScene)
 	{
 		//Console.WriteLine("LoginToSave 처리 시작");
@@ -177,11 +173,9 @@ class PacketHandler
 		return toScene;
 	}
 	
-	/// <summary>
 	/// fixedRandomMove: 고정 위치 + 랜덤 오프셋 이동
 	/// - forcedMove (UI 버튼 강제이동)와 portal (포탈 이동) 공통 처리
 	/// - 지정된 위치에 랜덤성 추가하여 이동
-	/// </summary>
 	private static void HandleFixedRandomMove(ClientSession clientSession, float spawnX, float spawnY, float spawnZ, string toScene, string mmNumber, string moveType)
 	{
 		Console.WriteLine($"{moveType} 이동: mmNumber {mmNumber} -> {toScene}");
@@ -196,22 +190,18 @@ class PacketHandler
 		clientSession.PosZ = spawnZ + randomZ;
 	}
 	
-	/// <summary>
 	/// 리얼타임 데이터베이스 업데이트
-	/// </summary>
 	private static async Task UpdateUserDatabase(ClientSession clientSession, string toScene)
 	{
 		string savedPositionString = $"{clientSession.PosX} / {clientSession.PosY} / {clientSession.PosZ}";
 		
-		// 리얼타임 데이터베이스에 savedScene 업데이트
-		bool sceneUpdateResult = await Program.DBManager._realTime.UpdateUserSceneAsync(clientSession.email, toScene);
-		
-		// 리얼타임 데이터베이스에 savedPosition 업데이트  
-		bool positionUpdateResult = await Program.DBManager._realTime.UpdateUserPositionAsync(clientSession.email, savedPositionString);
-		
-		if (sceneUpdateResult && positionUpdateResult) {} //Console.WriteLine($"사용자 위치 정보 업데이트 성공: {clientSession.email} -> {toScene} ({savedPositionString})");
-		else Console.WriteLine($"사용자 위치 정보 업데이트 실패: {clientSession.email}");
-	}
+		// 리얼타임 데이터베이스 업데이트
+		_ = Program.DBManager._realTime.UpdateUserSceneAsync   (clientSession.email, toScene);
+		_ = Program.DBManager._realTime.UpdateUserPositionAsync(clientSession.email, savedPositionString);
+		_ = Program.DBManager._realTime.UpdateUserHpAsync      (clientSession.email, clientSession.CurrentHP.ToString());
+		_ = Program.DBManager._realTime.UpdateLevelAsync       (clientSession.email,clientSession.CurrentLevel.ToString());
+		_ = Program.DBManager._realTime.UpdateUserExpAsync     (clientSession.email,clientSession.currentExp.ToString());
+ 	}
 	
 	public static void C_EntityLeaveHandler(PacketSession session, IPacket packet)
 	{

@@ -11,7 +11,7 @@ namespace Server
 		#region 플레이어 전용
 
 		public string email       { get; set; }  // admin123_AT_naver_DOT_com 를 이용하여, 값을 바꾸거나, 받아올 때 사용
-		public int    CurrentExp  { get; set; } 
+		public int    currentExp  { get; set; }
 		public int    CurrentGold { get; set; }
 		
 		#endregion

@@ -200,11 +200,6 @@ namespace Server
             float angleRad = (float)Math.Atan2(animState.MoveDirectionX, animState.MoveDirectionZ);
             float angleDeg = angleRad * 180.0f / (float)Math.PI;
             monster.RotationY = angleDeg;
-
-            // Console.WriteLine($"[몬스터 이동] {monster.SerialNumber}({monster.SessionId}) " +
-            //                 $"위치: ({monster.PosX:F2}, {monster.PosZ:F2}), " +
-            //                 $"방향: ({animState.MoveDirectionX:F3}, {animState.MoveDirectionZ:F3}), " +
-            //                 $"각도: {angleDeg:F1}도");
         }    
         
         /// <summary>
@@ -442,27 +437,21 @@ namespace Server
                         continue;
                     }
                     
-                    // 타겟 플레이어와의 거리 기반 범위 체크 (range를 "X / Y / Z" 형식에서 X 값 추출)
-                    string[] rangeParts = info.range.Split('/');
-                    if (rangeParts.Length >= 1 && float.TryParse(rangeParts[0].Trim(), out float attackRange))
+                    // CreateVirtualAttackPacket + GameRoom.IsInAttackRange 재사용
+                    var virtualPacket = CreateVirtualAttackPacketForCheck(session, i);
+                    if (virtualPacket != null && session.Room != null)
                     {
-                        // 타겟 플레이어의 몸통 크기도 고려
-                        float effectiveDistance = distanceToTarget - targetPlayer.Body_Size;
-                        if (effectiveDistance < 0) effectiveDistance = 0;
-                        
-                        if (effectiveDistance <= attackRange)
+                        // GameRoom의 기존 IsInAttackRange 로직을 재사용
+                        bool inRange = IsInAttackRangeUsingGameRoomLogic(virtualPacket, targetPlayer);
+                        if (inRange)
                         {
-                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, 타겟거리: {distanceToTarget:F1}, 유효거리: {effectiveDistance:F1}, 범위: {attackRange})");
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, OBB 박스 범위 내)");
                             candidateAttacks.Add(i);
                         }
                         else
                         {
-                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 타겟 범위 밖 (타겟거리: {distanceToTarget:F1}, 유효거리: {effectiveDistance:F1}, 범위: {attackRange}, 쿨타임: OK)");
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 타겟 범위 밖 (OBB 박스 범위 밖, 쿨타임: OK)");
                         }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 범위 설정 오류 (range: {info.range})");
                     }
                 }
 
@@ -732,6 +721,81 @@ namespace Server
                 animState.HasMoveDirection = false;
             }
         }        
+        
+        /// <summary>
+        /// 공격 체크용 가상 AttackCheck 패킷 생성 (GameRoom.CreateVirtualAttackPacket과 동일)
+        /// </summary>
+        private C_EntityAttackCheck CreateVirtualAttackPacketForCheck(CommonSession attacker, int attackNumber)
+        {
+            string attackSerial = $"A{attacker.SerialNumber}_{attackNumber}";
+            AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
+            
+            if (attackInfo == null)
+            {
+                Console.WriteLine($"[Error] 공격 정보를 찾을 수 없습니다: {attackSerial} (Owner: {attacker.SerialNumber})");
+                return null;
+            }
+
+            // 공격 범위 파싱 검증
+            string[] rangeParts = attackInfo.range.Split('/');
+            if (rangeParts.Length != 3)
+            {
+                Console.WriteLine($"[Error] 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+                return null;
+            }
+
+            // 공격 중심 = 본인 위치 + 앞(0.5m) + 약간 위(1m)
+            double rad = attacker.RotationY * Math.PI / 180.0;
+            float forwardX = (float)Math.Sin(rad);
+            float forwardZ = (float)Math.Cos(rad);
+            return new C_EntityAttackCheck {
+                attackCenterX = attacker.PosX + forwardX * 0.5f,
+                attackCenterY = attacker.PosY + 1f,
+                attackCenterZ = attacker.PosZ + forwardZ * 0.5f,
+                rotationY     = attacker.RotationY,
+                attackSerial  = attackSerial,
+            };
+        }
+
+        /// <summary>
+        /// GameRoom.IsInAttackRange와 동일한 로직으로 범위 체크
+        /// </summary>
+        private bool IsInAttackRangeUsingGameRoomLogic(C_EntityAttackCheck packet, CommonSession target)
+        {
+            // GameRoom.IsInAttackRange와 동일한 로직
+            AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
+            if (attackInfo == null) return false;
+            
+            string[] rangeParts = attackInfo.range.Split('/');
+            if (rangeParts.Length != 3) return false;
+            
+            float rangeX      = float.Parse(rangeParts[0].Trim());
+            float rangeZ      = float.Parse(rangeParts[2].Trim()); 
+            float checkRangeX = rangeX * 2;
+            float checkRangeZ = rangeZ * 2;
+            
+            float centerX      = packet.attackCenterX;
+            float centerZ      = packet.attackCenterZ;
+            float rotationY    = packet.rotationY;
+            float targetX      = target.PosX;
+            float targetZ      = target.PosZ;
+            float targetRadius = target.Body_Size;
+            
+            // OBB vs 구 충돌 판정 (GameRoom.IsInAttackRange와 동일)
+            float relativeX       = targetX - centerX;
+            float relativeZ       = targetZ - centerZ;
+            float cosY            = (float)Math.Cos(-rotationY * Math.PI / 180.0f);
+            float sinY            = (float)Math.Sin(-rotationY * Math.PI / 180.0f);
+            float localX          = relativeX * cosY - relativeZ * sinY;
+            float localZ          = relativeX * sinY + relativeZ * cosY;
+            float halfX           = checkRangeX * 0.5f;
+            float halfZ           = checkRangeZ * 0.5f;
+            float dx              = Math.Max(0, Math.Abs(localX) - halfX);
+            float dz              = Math.Max(0, Math.Abs(localZ) - halfZ);
+            float distanceSquared = dx * dx + dz * dz;
+            
+            return distanceSquared <= (targetRadius * targetRadius);
+        }
         
         #endregion
     }

@@ -34,18 +34,23 @@ namespace Server
 			// ClientSession.cs의 OnDisconnected에서 감지 후, 방에서 나가게 한다.
 			Console.WriteLine("연결 끊김 : " + SessionId);
 			
-			// 사망 상태일 때 Village로 씬 변경
+			// 사망으로 인한 연결 끊김 => Village로 씬 변경 / 마을 중앙 위치 변경 / HP 변경
 			if (CurrentHP <= 0 || !Live)
 			{
-				_ = Program.DBManager._realTime.UpdateUserSceneAsync(email, "Village");
-				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, "0 / 0 / 0");
-				Console.WriteLine($"[OnDisconnected] 플레이어 {NickName}({SessionId}) 사망 상태로 강제종료 - DB 씬을 Village로 변경 + 0 0 0 으로 위치 변경");
+				_ = Program.DBManager._realTime.UpdateUserSceneAsync   (email,   "Village");	// 씬
+				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, "0 / 0 / 0");	// 위치
+				_ = Program.DBManager._realTime.UpdateUserHpAsync      (email, MaxHP.ToString());				// HP(최대 체력 회복 => 마을로 돌아가면서, 세션 HP는 복구됨.)
+				_ = Program.DBManager._realTime.UpdateLevelAsync       (email,CurrentLevel.ToString());
+				_ = Program.DBManager._realTime.UpdateUserExpAsync     (email,currentExp.ToString());
+
 			}
+			// 비정상 or 명시적 종료로 연결 끊김 => 현재 위치 / HP 저장
 			else
 			{
-				// 리얼타임 데이터베이스에 savedPosition 업데이트
-				string savedPositionString = PosX + " / " + PosY + " / " + PosZ;
-				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, savedPositionString);
+				_ = Program.DBManager._realTime.UpdateUserPositionAsync(email, PosX + " / " + PosY + " / " + PosZ);	// 위치
+				_ = Program.DBManager._realTime.UpdateUserHpAsync      (email, CurrentHP.ToString());									// HP(현재 체력 저장)
+				_ = Program.DBManager._realTime.UpdateLevelAsync       (email,CurrentLevel.ToString());
+				_ = Program.DBManager._realTime.UpdateUserExpAsync     (email,currentExp.ToString());
 			}
 			
 			// 세션 제거 및 룸에서 제거

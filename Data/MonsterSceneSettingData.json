@@ -9,11 +9,11 @@
       "makeRadius": "5"
     },
     {
-      "mmNumber": "M02",
+      "mmNumber": "M03",
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 91.0",
+      "makePos": "19 / 0.0 / 91.0",
       "makeRadius": "5"
     },
     {
@@ -25,11 +25,11 @@
       "makeRadius": "5"
     },
     {
-      "mmNumber": "M03",
+      "mmNumber": "M02",
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "19 / 0.0 / 91.0",
+      "makePos": "-19 / 0.0 / 91.0",
       "makeRadius": "5"
     }
   ]

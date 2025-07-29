@@ -1,6 +1,36 @@
 {
   "characterInfos": [
     {
+      "serialNumber": "O001",
+      "level": "1",
+      "nickName": "Spike Trap",
+      "needEXP": "0",
+      "dropExp": "0",
+      "invincibility": "TRUE",
+      "maxHp": "0",
+      "body_Size": "0",
+      "moveSpeed": "0",
+      "findRadius": "0",
+      "normalAttackDamage": "100",
+      "normalAttackRange": "1.5 / 1.5 / 1.5",
+      "hitLength": "0"
+    },
+    {
+      "serialNumber": "P000",
+      "level": "1",
+      "nickName": "닉네임",
+      "needEXP": "50",
+      "dropExp": "0",
+      "invincibility": "FALSE",
+      "maxHp": "1000",
+      "body_Size": "0.3",
+      "moveSpeed": "5",
+      "findRadius": "0",
+      "normalAttackDamage": "50",
+      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0"
+    },
+    {
       "serialNumber": "M000",
       "level": "1",
       "nickName": "Knight",
@@ -31,36 +61,6 @@
       "hitLength": "0"
     },
     {
-      "serialNumber": "O000",
-      "level": "1",
-      "nickName": "Dummy",
-      "needEXP": "0",
-      "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "250",
-      "body_Size": "0.5",
-      "moveSpeed": "0",
-      "findRadius": "0",
-      "normalAttackDamage": "0",
-      "normalAttackRange": "0.0 / 0.0 / 0.0",
-      "hitLength": "0.5"
-    },
-    {
-      "serialNumber": "P000",
-      "level": "1",
-      "nickName": "닉네임",
-      "needEXP": "50",
-      "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "1000",
-      "body_Size": "0.3",
-      "moveSpeed": "5",
-      "findRadius": "0",
-      "normalAttackDamage": "50",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
-      "hitLength": "0"
-    },
-    {
       "serialNumber": "P000",
       "level": "2",
       "nickName": "닉네임",
@@ -76,19 +76,19 @@
       "hitLength": "0"
     },
     {
-      "serialNumber": "O001",
+      "serialNumber": "O000",
       "level": "1",
-      "nickName": "Spike Trap",
+      "nickName": "Dummy",
       "needEXP": "0",
       "dropExp": "0",
-      "invincibility": "TRUE",
-      "maxHp": "0",
-      "body_Size": "0",
+      "invincibility": "FALSE",
+      "maxHp": "250",
+      "body_Size": "0.5",
       "moveSpeed": "0",
       "findRadius": "0",
-      "normalAttackDamage": "100",
-      "normalAttackRange": "1.5 / 1.5 / 1.5",
-      "hitLength": "0"
+      "normalAttackDamage": "0",
+      "normalAttackRange": "0.0 / 0.0 / 0.0",
+      "hitLength": "0.5"
     }
   ]
 }
