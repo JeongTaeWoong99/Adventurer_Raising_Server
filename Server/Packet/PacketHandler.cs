@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Server;
 using ServerCore;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ class PacketHandler
 		
 		// 로그인 시도 비동기 진행....
 		Program.DBManager._auth.LoginAsync(loginPtk.email, loginPtk.password, clientSession);
+		Console.WriteLine("C_RequestLoginHandler");
 	}
 	
 	#endregion

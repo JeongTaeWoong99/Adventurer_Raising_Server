@@ -54,6 +54,8 @@
             <string name = "nickname"/>
             <int    name = "currentLevel"/>
             <int    name = "currentHp"/>
+            <int    name = "currentExp"/>
+            <int    name = "currentGold"/>
             <bool   name = "live"/>
             <bool   name = "invincibility"/>
             <float  name = "posX"/>

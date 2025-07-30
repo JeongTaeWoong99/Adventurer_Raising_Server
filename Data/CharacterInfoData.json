@@ -1,19 +1,19 @@
 {
   "characterInfos": [
     {
-      "serialNumber": "O001",
+      "serialNumber": "M000",
       "level": "1",
-      "nickName": "Spike Trap",
+      "nickName": "Knight",
       "needEXP": "0",
-      "dropExp": "0",
-      "invincibility": "TRUE",
-      "maxHp": "0",
-      "body_Size": "0",
-      "moveSpeed": "0",
-      "findRadius": "0",
-      "normalAttackDamage": "100",
-      "normalAttackRange": "1.5 / 1.5 / 1.5",
-      "hitLength": "0"
+      "dropExp": "20",
+      "invincibility": "FALSE",
+      "maxHp": "300",
+      "body_Size": "0.3",
+      "moveSpeed": "5",
+      "findRadius": "12",
+      "normalAttackDamage": "20",
+      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0.378"
     },
     {
       "serialNumber": "P000",
@@ -31,25 +31,40 @@
       "hitLength": "0"
     },
     {
-      "serialNumber": "M000",
+      "serialNumber": "O001",
       "level": "1",
-      "nickName": "Knight",
+      "nickName": "Spike Trap",
       "needEXP": "0",
-      "dropExp": "20",
+      "dropExp": "0",
+      "invincibility": "TRUE",
+      "maxHp": "0",
+      "body_Size": "0",
+      "moveSpeed": "0",
+      "findRadius": "0",
+      "normalAttackDamage": "100",
+      "normalAttackRange": "1.5 / 1.5 / 1.5",
+      "hitLength": "0"
+    },
+    {
+      "serialNumber": "O000",
+      "level": "1",
+      "nickName": "Dummy",
+      "needEXP": "0",
+      "dropExp": "0",
       "invincibility": "FALSE",
-      "maxHp": "300",
-      "body_Size": "0.3",
-      "moveSpeed": "5",
-      "findRadius": "12",
-      "normalAttackDamage": "20",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
-      "hitLength": "0.378"
+      "maxHp": "250",
+      "body_Size": "0.5",
+      "moveSpeed": "0",
+      "findRadius": "0",
+      "normalAttackDamage": "0",
+      "normalAttackRange": "0.0 / 0.0 / 0.0",
+      "hitLength": "0.5"
     },
     {
       "serialNumber": "P000",
       "level": "3",
       "nickName": "닉네임",
-      "needEXP": "150",
+      "needEXP": "0",
       "dropExp": "0",
       "invincibility": "FALSE",
       "maxHp": "2000",
@@ -74,21 +89,6 @@
       "normalAttackDamage": "75",
       "normalAttackRange": "1.0 / 1.0 / 1.0",
       "hitLength": "0"
-    },
-    {
-      "serialNumber": "O000",
-      "level": "1",
-      "nickName": "Dummy",
-      "needEXP": "0",
-      "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "250",
-      "body_Size": "0.5",
-      "moveSpeed": "0",
-      "findRadius": "0",
-      "normalAttackDamage": "0",
-      "normalAttackRange": "0.0 / 0.0 / 0.0",
-      "hitLength": "0.5"
     }
   ]
 }

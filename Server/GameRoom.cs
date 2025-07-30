@@ -273,58 +273,48 @@ namespace Server
 			if (expGain <= 0)
 				return; // 경험치가 0이면 처리하지 않음
 			
-			// 세션에 현재 경험치 갱신
-			attacker.currentExp += expGain;
-			
 			// 현재 레벨의 필요 경험치를 JSON에서 가져오기 (플레이어 시리얼 넘버 + 레벨 기반)
 			int needEXP = Program.DBManager.GetNeedExp(attacker.SerialNumber, attacker.CurrentLevel);
 			if (needEXP <= 0)
 				return; // 필요 경험치 정보가 없으면 처리하지 않음
 			
-			// 레벨업 확인 및 처리
-			if (attacker.currentExp >= needEXP)
+			// 다음 레벨에 대한 정보를 찾기
+			CharacterInfoData newLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel + 1);
+			if (newLevelInfo == null)
+				return;	// 다음 레벨 정보가 없으면, 만렙인 상태
+			
+			// 레벨업(모두에게 브로드케스트)
+			// 현재 Exp + 획득 Exp >= 현재 레벨의 needExp
+			if (attacker.currentExp + expGain >= needEXP)
 			{
-				// 다음 레벨에 대한 정보를 찾기
-				CharacterInfoData newLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel + 1);
+				// 레벨업 처리 및 Exp 초기화
+				attacker.CurrentLevel++;
+				attacker.currentExp = 0;
 				
-				// 다음 레벨에 대한 정보가 있는 경우
-				if (newLevelInfo != null)
+				// 새로운 레벨의 스탯 정보로 업데이트
+				if (int.TryParse(newLevelInfo.maxHp, out int newMaxHP))
 				{
-					// 레벨업 처리
-					attacker.CurrentLevel++;
-					attacker.currentExp = 0;
-
-					// 새로운 레벨의 스탯 정보로 업데이트
-					if (int.TryParse(newLevelInfo.maxHp, out int newMaxHP))
-					{
-						attacker.MaxHP     = newMaxHP;
-						attacker.CurrentHP = newMaxHP; // 레벨업 시 체력 완전 회복
-					}
-					
-					if (int.TryParse(newLevelInfo.normalAttackDamage, out int newDamage))
-					{
-						attacker.Damage = newDamage;
-					}
-					
-					if (float.TryParse(newLevelInfo.moveSpeed, out float newMoveSpeed))
-					{
-						attacker.moveSpeed = newMoveSpeed;
-					}
+					attacker.MaxHP     = newMaxHP;
+					attacker.CurrentHP = newMaxHP; // 레벨업 시 체력 완전 회복
 				}
-				// 다음 레벨에 대한 정보가 없는 경우
-				else
+				if (int.TryParse(newLevelInfo.normalAttackDamage, out int newDamage))
 				{
-					CharacterInfoData currentLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel);
-					attacker.currentExp = int.Parse(currentLevelInfo.needEXP); // 최고값 유지만 하기
-					Console.WriteLine($"레벨업 스탯 정보를 찾을 수 없습니다: {attacker.SerialNumber} 레벨 {attacker.CurrentLevel}");
+					attacker.Damage = newDamage;
+				}
+				if (float.TryParse(newLevelInfo.moveSpeed, out float newMoveSpeed))
+				{
+					attacker.moveSpeed = newMoveSpeed;
 				}
 				
 				// EXP가 레벨 필요 EXP를 넘어감 => 세션 정보 변경 및 브로드케스트
 				EntityInfoChange(attacker);
 			}
-			// Exp Up 및 처리
+			// Exp 증가(단일 Send)
 			else
 			{
+				// Exp 증가
+				attacker.currentExp += expGain;
+				
 				// EXP가 레벨 필요 EXP보다 적음 => 세션 정보 변경 및 단일 세그먼트 전송
 				S_BroadcastEntityInfoChange expChange = new S_BroadcastEntityInfoChange {
 					ID            = attacker.SessionId,
@@ -337,6 +327,68 @@ namespace Server
 				};
 				attacker.Send(expChange.Write());
 			}
+
+
+			// // 세션에 현재 경험치 갱신
+			// attacker.currentExp += expGain;
+			//
+			// // 레벨업 확인 및 처리
+			// if (attacker.currentExp >= needEXP)
+			// {
+			// 	// 다음 레벨에 대한 정보를 찾기
+			// 	CharacterInfoData newLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel + 1);
+			// 	
+			// 	// 다음 레벨에 대한 정보가 있는 경우
+			// 	if (newLevelInfo != null)
+			// 	{
+			// 		// 레벨업 처리
+			// 		attacker.CurrentLevel++;
+			// 		attacker.currentExp = 0;
+			//
+			// 		// 새로운 레벨의 스탯 정보로 업데이트
+			// 		if (int.TryParse(newLevelInfo.maxHp, out int newMaxHP))
+			// 		{
+			// 			attacker.MaxHP     = newMaxHP;
+			// 			attacker.CurrentHP = newMaxHP; // 레벨업 시 체력 완전 회복
+			// 		}
+			// 		
+			// 		if (int.TryParse(newLevelInfo.normalAttackDamage, out int newDamage))
+			// 		{
+			// 			attacker.Damage = newDamage;
+			// 		}
+			// 		
+			// 		if (float.TryParse(newLevelInfo.moveSpeed, out float newMoveSpeed))
+			// 		{
+			// 			attacker.moveSpeed = newMoveSpeed;
+			// 		}
+			// 		
+			// 		// EXP가 레벨 필요 EXP를 넘어감 => 세션 정보 변경 및 브로드케스트
+			// 		EntityInfoChange(attacker);
+			// 	}
+			// 	// 다음 레벨에 대한 정보가 없는 경우
+			// 	else
+			// 	{
+			// 		Console.WriteLine($"다음 레벨업 스탯 정보를 찾을 수 없습니다: {attacker.SerialNumber} 레벨 {attacker.CurrentLevel}");
+			// 		// CharacterInfoData currentLevelInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel);
+			// 		// attacker.currentExp = int.Parse(currentLevelInfo.needEXP); // 최고값 유지만 하기
+			// 	}
+			// 	
+			// }
+			// // Exp Up 및 처리
+			// else
+			// {
+			// 	// EXP가 레벨 필요 EXP보다 적음 => 세션 정보 변경 및 단일 세그먼트 전송
+			// 	S_BroadcastEntityInfoChange expChange = new S_BroadcastEntityInfoChange {
+			// 		ID            = attacker.SessionId,
+			// 		entityType    = attacker.EntityType,
+			// 		currentExp    = attacker.currentExp,
+			// 		currentLevel  = attacker.CurrentLevel,
+			// 		currentHp     = attacker.CurrentHP,
+			// 		live          = attacker.Live,
+			// 		invincibility = attacker.Invincibility
+			// 	};
+			// 	attacker.Send(expChange.Write());
+			// }
 		}
 		
 		#endregion
@@ -363,6 +415,8 @@ namespace Server
 					nickname      = s.NickName,
 					currentLevel  = s.CurrentLevel,
 					currentHp     = s.CurrentHP,
+					currentExp    = s.currentExp,
+					currentGold   = s.CurrentGold,
 					live          = s.Live,
 					invincibility = s.Invincibility,
 					posX          = s.PosX,
