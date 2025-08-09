@@ -184,7 +184,7 @@
         <float name = "dirZ"/>
     </packet>
     
-    <packet name = "S_BroadcastEntityAttackAnimation"   >
+    <packet name = "S_BroadcastEntityAttackAnimation">
         <int   name = "ID"/>
         <int   name = "entityType"/>
         <int   name = "animationID"/>
@@ -221,6 +221,18 @@
             <float  name = "hitMoveDirY"/>
             <float  name = "hitMoveDirZ"/>
         </list>
+    </packet>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- 플레이어 전용 채팅 보내기 -->
+    <packet name = "C_Chatting">
+        <string name = "contents"/>
+    </packet>
+    
+    <!-- 플레이어 전용 채팅 브로드케스트 -->
+    <packet name = "S_BroadcastChatting">
+        <int    name = "ID"/>
+        <string name = "contents"/>
     </packet>
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->

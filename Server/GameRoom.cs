@@ -635,8 +635,18 @@ namespace Server
 			if (attackResult.entitys.Count > 0)
 				Broadcast(attackResult.Write());
 		}
+		
+		// 채팅
+		public void Chatting(CommonSession session, C_Chatting packet)
+		{
+			// 모두에게 알리기 위해, 대기 목록에 추가
+			S_BroadcastChatting chatting = new S_BroadcastChatting {
+				ID       = session.SessionId,
+				contents = packet.contents
+			};
 
-
+			Broadcast(chatting.Write());
+		}
 		
 		#endregion
 		

@@ -284,5 +284,15 @@ class PacketHandler
 			room.Push(() => room.AttackCheckToAttackResult(commonSession, attackAnimationPacket));
 		}
 	}
+	
+	public static void C_ChattingHandler(PacketSession session, IPacket packet)
+	{
+		C_Chatting chatting = packet as C_Chatting;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.Chatting(commonSession, chatting));
+		}
+	}
 	#endregion
 }
