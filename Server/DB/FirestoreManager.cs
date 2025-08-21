@@ -31,14 +31,24 @@ public class AttackInfoData
 {
     public string attackSerial;
     public string ownerSerial;
-    public string name;
     public string type;
+    public string name;
+    public string colliderType;
+    public string fixedCreatePos;
+    public string createPos;
     public string range;
     public string animeLength;
     public string attackTiming;
+    public string repeat;
     public string damageMultiplier;
+    public string moveSpeed;
+    public string duration;
+    public string buffType;
     public string coolTime;
+    public string penetration;
+    public string skillSerial;
     public string effectSerial;
+    public string image;
 }
 [Serializable]
 public class MonsterSceneSettingData

@@ -442,7 +442,7 @@ namespace Server
                     if (virtualPacket != null && session.Room != null)
                     {
                         // GameRoom의 기존 IsInAttackRange 로직을 재사용
-                        bool inRange = IsInAttackRangeUsingGameRoomLogic(virtualPacket, targetPlayer);
+                        bool inRange = IsInAttackRangeUsingGameRoomLogic(virtualPacket, targetPlayer, session);
                         if (inRange)
                         {
                             Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, OBB 박스 범위 내)");
@@ -749,34 +749,56 @@ namespace Server
             float forwardX = (float)Math.Sin(rad);
             float forwardZ = (float)Math.Cos(rad);
             return new C_EntityAttackCheck {
-                attackCenterX = attacker.PosX + forwardX * 0.5f,
-                attackCenterY = attacker.PosY + 1f,
-                attackCenterZ = attacker.PosZ + forwardZ * 0.5f,
-                rotationY     = attacker.RotationY,
+                createPosX = attacker.PosX,
+                createPosY = attacker.PosY,
+                createPosZ = attacker.PosZ,
                 attackSerial  = attackSerial,
             };
         }
 
         /// <summary>
-        /// GameRoom.IsInAttackRange와 동일한 로직으로 범위 체크
+        /// GameRoom.IsInAttackRange와 동일한 로직으로 범위 체크 (colliderType 지원)
         /// </summary>
-        private bool IsInAttackRangeUsingGameRoomLogic(C_EntityAttackCheck packet, CommonSession target)
+        private bool IsInAttackRangeUsingGameRoomLogic(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker)
         {
-            // GameRoom.IsInAttackRange와 동일한 로직
+            // GameRoom.IsInAttackRange와 동일한 로직 (colliderType 지원)
             AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
             if (attackInfo == null) return false;
+
+            // colliderType에 따른 분기 처리 (대소문자 구분 없음)
+            string colliderType = attackInfo.colliderType?.ToUpper();
             
+            if (colliderType == "BOX")
+            {
+                return IsBoxVsCircleCollisionInSchedule(packet, target, attacker, attackInfo);
+            }
+            else if (colliderType == "CIRCLE")
+            {
+                return IsCircleVsCircleCollisionInSchedule(packet, target, attacker, attackInfo);
+            }
+            else
+            {
+                Console.WriteLine($"알 수 없는 colliderType: {colliderType} (원본: {attackInfo.colliderType})");
+                // 기본값으로 BOX 처리 (기존 몬스터 호환성)
+                return IsBoxVsCircleCollisionInSchedule(packet, target, attacker, attackInfo);
+            }
+        }
+
+        // BOX vs CIRCLE 충돌 판정 (ScheduleManager용)
+        private bool IsBoxVsCircleCollisionInSchedule(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
+        {
             string[] rangeParts = attackInfo.range.Split('/');
             if (rangeParts.Length != 3) return false;
             
             float rangeX      = float.Parse(rangeParts[0].Trim());
             float rangeZ      = float.Parse(rangeParts[2].Trim()); 
-            float checkRangeX = rangeX * 2;
-            float checkRangeZ = rangeZ * 2;
+            // Box 콜리더는 x, z 범위에 2를 곱해서 크기 조정
+            float checkRangeX = rangeX * 2f;
+            float checkRangeZ = rangeZ * 2f;
             
-            float centerX      = packet.attackCenterX;
-            float centerZ      = packet.attackCenterZ;
-            float rotationY    = packet.rotationY;
+            float centerX      = packet.createPosX;
+            float centerZ      = packet.createPosZ;
+            float rotationY    = attacker.RotationY; // 공격자의 회전값 사용
             float targetX      = target.PosX;
             float targetZ      = target.PosZ;
             float targetRadius = target.Body_Size;
@@ -795,6 +817,37 @@ namespace Server
             float distanceSquared = dx * dx + dz * dz;
             
             return distanceSquared <= (targetRadius * targetRadius);
+        }
+
+        // CIRCLE vs CIRCLE 충돌 판정 (ScheduleManager용)
+        private bool IsCircleVsCircleCollisionInSchedule(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
+        {
+            // range를 반지름으로 사용 (CIRCLE의 경우 단일 값)
+            if (!float.TryParse(attackInfo.range, out float attackRadius))
+            {
+                Console.WriteLine($"CIRCLE colliderType의 잘못된 range 형식: {attackInfo.range}");
+                return false;
+            }
+
+            // 타겟의 현재 위치와 반지름
+            float targetX = target.PosX;
+            float targetZ = target.PosZ;
+            float targetRadius = target.Body_Size;
+
+            // 공격 중심점
+            float centerX = packet.createPosX;
+            float centerZ = packet.createPosZ;
+
+            // 두 원의 중심 사이의 거리 계산 (XZ 평면만, Y축 제외)
+            float deltaX = targetX - centerX;
+            float deltaZ = targetZ - centerZ;
+            float distance = (float)Math.Sqrt(deltaX * deltaX + deltaZ * deltaZ);
+
+            // 두 원이 겹치는지 확인 (거리 < 반지름의 합)
+            // Circle 콜리더도 약간 범위를 늘려서 더 정확한 히트 판정
+            float adjustedAttackRadius = attackRadius * 1.2f; // 20% 증가
+            float totalRadius = adjustedAttackRadius + targetRadius;
+            return distance <= totalRadius;
         }
         
         #endregion

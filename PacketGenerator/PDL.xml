@@ -198,10 +198,9 @@
 
     <!-- 1개의 단일 공격에 대해서, 체크 -->
     <packet name = "C_EntityAttackCheck">
-        <float  name = "attackCenterX"/>
-        <float  name = "attackCenterY"/>
-        <float  name = "attackCenterZ"/>
-        <float  name = "rotationY"/>
+        <float  name = "createPosX"/>
+        <float  name = "createPosY"/>
+        <float  name = "createPosZ"/>
         <string name = "attackSerial"/>
     </packet>
 
@@ -221,6 +220,27 @@
             <float  name = "hitMoveDirY"/>
             <float  name = "hitMoveDirZ"/>
         </list>
+    </packet>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    
+    <!-- 스킬 생성 패킷 -->
+    <packet name = "C_EntitySkillCreate">
+        <float  name = "createPosX"/>
+        <float  name = "createPosY"/>
+        <float  name = "createPosZ"/>
+        <string name = "attackSerial"/>
+    </packet>
+    
+    <!-- 스킬 생성 브로드캐스트 -->
+    <packet name = "S_BroadcastEntitySkillCreate">
+        <int    name = "ID"/>
+        <int    name = "entityType"/>
+        <string name = "skillCreatePos"/>
+        <float  name = "moveSpeed"/>
+        <string name = "attackSerial"/>
+        <float  name = "duration"/>
+        <string name = "type"/>
     </packet>
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->

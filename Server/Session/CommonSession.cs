@@ -29,6 +29,7 @@ namespace Server
 		public int      MaxHP          { get; set; } 
 		public bool	    Live		   { get; set; } = true;	// 초기 true.
 		public bool		Invincibility  { get; set; }			// 명시 안해주면, false로 시작. 일부는 따로 true로 설정함.
+		public bool		BuffInvincibility { get; set; }		// 버프에 의한 무적 상태 (대쉬/idle과 별도 관리)
 		public float    PosX           { get; set; } 
 		public float    PosY           { get; set; } 
 		public float    PosZ           { get; set; }

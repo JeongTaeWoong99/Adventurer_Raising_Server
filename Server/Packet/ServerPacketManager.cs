@@ -64,6 +64,9 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.C_EntityAttackCheck, MakePacket<C_EntityAttackCheck>);
 		 _handler.Add((ushort)PacketID.C_EntityAttackCheck, PacketHandler.C_EntityAttackCheckHandler);
 
+		_makeFunc.Add((ushort)PacketID.C_EntitySkillCreate, MakePacket<C_EntitySkillCreate>);
+		 _handler.Add((ushort)PacketID.C_EntitySkillCreate, PacketHandler.C_EntitySkillCreateHandler);
+
 		_makeFunc.Add((ushort)PacketID.C_Chatting, MakePacket<C_Chatting>);
 		 _handler.Add((ushort)PacketID.C_Chatting, PacketHandler.C_ChattingHandler);
 

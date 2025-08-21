@@ -294,5 +294,15 @@ class PacketHandler
 			room.Push(() => room.Chatting(commonSession, chatting));
 		}
 	}
+	
+	public static void C_EntitySkillCreateHandler(PacketSession session, IPacket packet)
+	{
+		C_EntitySkillCreate skillCreate = packet as C_EntitySkillCreate;
+		if (session is CommonSession commonSession && commonSession.Room != null)
+		{
+			GameRoom room = commonSession.Room;
+			room.Push(() => room.SkillCreate(commonSession, skillCreate));
+		}
+	}
 	#endregion
 }
