@@ -26,8 +26,7 @@ namespace Server
 		private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
 		
 		// 매니저들
-		private SkillManager _skillManager;
-		private CombatManager _combatManager;
+		private AttackManager _attackManager;
 		
 		public GameRoom(string sceneName, DBManager dbManager)
 		{
@@ -35,8 +34,7 @@ namespace Server
 			Program.DBManager = dbManager;
 			
 			// 매니저들 초기화
-			_skillManager = new SkillManager(this);
-			_combatManager = new CombatManager(this);
+			_attackManager = new AttackManager(this);
 		}
 		
 		public void Push(Action job)
@@ -97,19 +95,10 @@ namespace Server
 			Broadcast(change.Write());
 		}
 		
-		// 공격자 타입에 따른 타겟 목록 반환
+		// 공격자 타입에 따른 타겟 목록 반환 - AttackManager로 위임
 		public List<CommonSession> GetAttackTargets(int attackerEntityType)
 		{
-			var targets = new List<CommonSession>();
-				
-			// 플레이어 공격 -> 오브젝트/몬스터 타겟
-			if (attackerEntityType == (int)Define.Layer.Player)
-				targets.AddRange(_commonSessions.Where(s => s.EntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster));
-			// 오브젝트/몬스터 공격 -> 플레이어 타겟
-			else if (attackerEntityType is (int)Define.Layer.Object or (int)Define.Layer.Monster)
-				targets.AddRange(_commonSessions.Where(s => s.EntityType == (int)Define.Layer.Player));
-			
-			return targets;
+			return _attackManager.GetAttackTargets(attackerEntityType);
 		}
 		
 		// 세션 목록 접근자 추가
@@ -118,13 +107,13 @@ namespace Server
 		// 충돌 판정 - CombatManager로 위임
 		public bool IsInAttackRange(float attackCenterX, float attackCenterY, float attackCenterZ, float rotationY, AttackInfoData attackInfo, CommonSession target)
 		{
-			return _combatManager.IsInAttackRange(attackCenterX, attackCenterY, attackCenterZ, rotationY, attackInfo, target);
+			return _attackManager.IsInAttackRange(attackCenterX, attackCenterY, attackCenterZ, rotationY, attackInfo, target);
 		}
 		
 		// 히트 처리 - CombatManager로 위임
 		public void ProcessHit(CommonSession attacker, CommonSession target, int damage, float attackCenterX, float attackCenterY, float attackCenterZ, S_BroadcastEntityAttackResult attackResult)
 		{
-			_combatManager.ProcessHit(attacker, target, damage, attackCenterX, attackCenterY, attackCenterZ, attackResult);
+			_attackManager.ProcessHit(attacker, target, damage, attackCenterX, attackCenterY, attackCenterZ, attackResult);
 		}
 
 		// 플레이어 경험치 획득 처리
@@ -398,15 +387,10 @@ namespace Server
 		}
 		
 		// 공격 유효 처리 - CombatManager로 위임
-		public void AttackCheckToAttackResult(CommonSession session, C_EntityAttackCheck packet)
-		{	
-			_combatManager.ProcessAttack(session, packet);
-		}
-		
-		// 공격 처리 메서드 (CombatManager에서 호출)
-		public void ProcessAttack(CommonSession session, C_EntityAttackCheck packet)
+		// 통합 공격 처리 메서드 (PacketHandler에서 호출)
+		public void Attack(CommonSession session, C_EntityAttack packet)
 		{
-			_combatManager.ProcessAttack(session, packet);
+			_attackManager.ProcessAttack(session, packet);
 		}
 		
 		// 채팅
@@ -421,16 +405,7 @@ namespace Server
 			Broadcast(chatting.Write());
 		}
 		
-		// 스킬 생성 - SkillManager로 위임
-		public void SkillCreate(CommonSession session, C_EntitySkillCreate packet)
-		{
-			_skillManager.HandleSkillCreate(session, packet);
-		}
 
-		// public void Attack(CommonSession session, C_EntityAttack packet)
-		// {
-		// 	
-		// }
 	
 		#endregion
 		
@@ -439,7 +414,7 @@ namespace Server
 		/// <summary>
 		/// ScheduleManager에서 호출하는 자동 공격 처리 메서드
 		/// - 오브젝트의 애니메이션 타이밍에 맞춰 자동으로 공격 실행
-		/// - 기존 AttackCheckToAttackResult 로직 재사용 (중복 제거)
+		/// - 통합된 Attack 로직 재사용 (중복 제거)
 		/// - AttackInfo 시트의 A + ownerSerial 구조 활용
 		/// </summary>
 		public void ProcessScheduledAttack(CommonSession attacker, int attackNumber)
@@ -450,17 +425,17 @@ namespace Server
 			var virtualAttackPacket = CreateVirtualAttackPacket(attacker, attackNumber);
 			if (virtualAttackPacket != null)
 			{
-				// 기존 AttackCheckToAttackResult 메서드 재사용 (완성도 높은 로직 활용)
-				AttackCheckToAttackResult(attacker, virtualAttackPacket);
+				// 통합된 Attack 메서드 사용
+				Attack(attacker, virtualAttackPacket);
 			}
 		}
 
 		/// <summary>
-		/// 오브젝트/몬스터 자동 공격을 위한 가상 AttackCheck 패킷 생성
+		/// 오브젝트/몬스터 자동 공격을 위한 가상 Attack 패킷 생성
 		/// - ScheduleManager의 자동 공격을 기존 시스템과 호환되게 처리
 		/// - 파이어베이스 AttackInfo 시트 구조에 맞게 attackSerial 생성 (A + ownerSerial + _공격번호)
 		/// </summary>
-		private C_EntityAttackCheck CreateVirtualAttackPacket(CommonSession attacker, int attackNumber)
+		private C_EntityAttack CreateVirtualAttackPacket(CommonSession attacker, int attackNumber)
 		{
 			// AttackInfoData 시트 참조 : O001, 1 → A_O001_1  /  M000, 2 → A_M000_2
 			string attackSerial = $"A_{attacker.SerialNumber}_{attackNumber}";
@@ -472,7 +447,7 @@ namespace Server
 				return null;
 			}
 
-			// NEW: 공격 범위 파싱 (AttackCheckToAttackResult와 동일한 방식)
+			// NEW: 공격 범위 파싱 (통합된 Attack과 동일한 방식)
 			string[] rangeParts = attackInfo.range.Split('/');
 			if (rangeParts.Length != 3)
 			{
@@ -480,15 +455,31 @@ namespace Server
 				return null;
 			}
 
-			// 공격 중심 = 본인 위치 + 앞(0.5m) + 약간 위(1m)
-			double rad = attacker.RotationY * Math.PI / 180.0;
-			float forwardX = (float)Math.Sin(rad);
-			float forwardZ = (float)Math.Cos(rad);
-			return new C_EntityAttackCheck {
-			createPosX = attacker.PosX,
-			createPosY = attacker.PosY,
-			createPosZ = attacker.PosZ,
-				attackSerial  = attackSerial,
+			// fixedCreatePos에 따른 공격 위치 결정
+			float finalCreatePosX, finalCreatePosY, finalCreatePosZ;
+			
+			if (bool.Parse(attackInfo.fixedCreatePos))
+			{
+				// fixedCreatePos가 TRUE면 '본인 위치 + createPos 오프셋' 사용
+				var attackWorldPos = Extension.ComputeCreateWorldPos(attacker.PosX, attacker.PosY, attacker.PosZ, 
+					attacker.RotationY, attackInfo.createPos);
+				finalCreatePosX = attackWorldPos.X;
+				finalCreatePosY = attackWorldPos.Y;
+				finalCreatePosZ = attackWorldPos.Z;
+			}
+			else
+			{
+				// fixedCreatePos가 FALSE면 본인 위치만 사용 (몬스터/오브젝트는 보통 본인 위치에서 공격)
+				finalCreatePosX = attacker.PosX;
+				finalCreatePosY = attacker.PosY;
+				finalCreatePosZ = attacker.PosZ;
+			}
+			
+			return new C_EntityAttack {
+				createPosX   = finalCreatePosX,
+				createPosY   = finalCreatePosY,
+				createPosZ   = finalCreatePosZ,
+				attackSerial = attackSerial,
 			};
 		}
 		

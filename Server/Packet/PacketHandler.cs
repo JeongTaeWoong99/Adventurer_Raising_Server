@@ -275,25 +275,15 @@ class PacketHandler
 		}
 	}
 	
-	public static void C_EntityAttackCheckHandler(PacketSession session, IPacket packet)
+	public static void C_EntityAttackHandler(PacketSession session, IPacket packet)
 	{
-		C_EntityAttackCheck attackAnimationPacket = packet as C_EntityAttackCheck;
+		C_EntityAttack attack = packet as C_EntityAttack;
 		if (session is CommonSession commonSession && commonSession.Room != null)
 		{
 			GameRoom room = commonSession.Room;
-			room.Push(() => room.AttackCheckToAttackResult(commonSession, attackAnimationPacket));
+			room.Push(() => room.Attack(commonSession, attack));
 		}
 	}
-	
-	// public static void C_EntityAttackHandler(PacketSession session, IPacket packet)
-	// {
-	// 	C_EntityAttack attack = packet as C_EntityAttack;
-	// 	if (session is CommonSession commonSession && commonSession.Room != null)
-	// 	{
-	// 		GameRoom room = commonSession.Room;
-	// 		room.Push(() => room.Attack(commonSession, attack));
-	// 	}
-	// }
 	
 	public static void C_ChattingHandler(PacketSession session, IPacket packet)
 	{
@@ -302,16 +292,6 @@ class PacketHandler
 		{
 			GameRoom room = commonSession.Room;
 			room.Push(() => room.Chatting(commonSession, chatting));
-		}
-	}
-	
-	public static void C_EntitySkillCreateHandler(PacketSession session, IPacket packet)
-	{
-		C_EntitySkillCreate skillCreate = packet as C_EntitySkillCreate;
-		if (session is CommonSession commonSession && commonSession.Room != null)
-		{
-			GameRoom room = commonSession.Room;
-			room.Push(() => room.SkillCreate(commonSession, skillCreate));
 		}
 	}
 	

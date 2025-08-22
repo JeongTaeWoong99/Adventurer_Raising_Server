@@ -734,9 +734,9 @@ namespace Server
         }        
         
         /// <summary>
-        /// 공격 체크용 가상 AttackCheck 패킷 생성 (GameRoom.CreateVirtualAttackPacket과 동일)
+        /// 공격 체크용 가상 Attack 패킷 생성 (GameRoom.CreateVirtualAttackPacket과 동일)
         /// </summary>
-        private C_EntityAttackCheck CreateVirtualAttackPacketForCheck(CommonSession attacker, int attackNumber)
+        private C_EntityAttack CreateVirtualAttackPacketForCheck(CommonSession attacker, int attackNumber)
         {
             string attackSerial = $"A_{attacker.SerialNumber}_{attackNumber}";
             AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
@@ -755,22 +755,38 @@ namespace Server
                 return null;
             }
 
-            // 공격 중심 = 본인 위치 + createPos
-            double rad = attacker.RotationY * Math.PI / 180.0;
-            float forwardX = (float)Math.Sin(rad);
-            float forwardZ = (float)Math.Cos(rad);
-            return new C_EntityAttackCheck() {
-                createPosX = attacker.PosX,
-                createPosY = attacker.PosY,
-                createPosZ = attacker.PosZ,
-                attackSerial  = attackSerial,
+            // fixedCreatePos에 따른 공격 위치 결정
+            float finalCreatePosX, finalCreatePosY, finalCreatePosZ;
+            
+            if (bool.Parse(attackInfo.fixedCreatePos))
+            {
+                // fixedCreatePos가 TRUE면 '본인 위치 + createPos 오프셋' 사용
+                var attackWorldPos = Extension.ComputeCreateWorldPos(attacker.PosX, attacker.PosY, attacker.PosZ, 
+                    attacker.RotationY, attackInfo.createPos);
+                finalCreatePosX = attackWorldPos.X;
+                finalCreatePosY = attackWorldPos.Y;
+                finalCreatePosZ = attackWorldPos.Z;
+            }
+            else
+            {
+                // fixedCreatePos가 FALSE면 본인 위치만 사용 (몬스터/오브젝트는 보통 본인 위치에서 공격)
+                finalCreatePosX = attacker.PosX;
+                finalCreatePosY = attacker.PosY;
+                finalCreatePosZ = attacker.PosZ;
+            }
+            
+            return new C_EntityAttack() {
+                createPosX   = finalCreatePosX,
+                createPosY   = finalCreatePosY,
+                createPosZ   = finalCreatePosZ,
+                attackSerial = attackSerial,
             };
         }
 
         /// <summary>
         /// GameRoom.IsInAttackRange와 동일한 로직으로 범위 체크 (colliderType 지원)
         /// </summary>
-        private bool IsInAttackRangeUsingGameRoomLogic(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker)
+        private bool IsInAttackRangeUsingGameRoomLogic(C_EntityAttack packet, CommonSession target, CommonSession attacker)
         {
             // GameRoom.IsInAttackRange와 동일한 로직 (colliderType 지원)
             AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(packet.attackSerial);
@@ -796,7 +812,7 @@ namespace Server
         }
 
         // BOX vs CIRCLE 충돌 판정 (ScheduleManager용)
-        private bool IsBoxVsCircleCollisionInSchedule(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
+        private bool IsBoxVsCircleCollisionInSchedule(C_EntityAttack packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
         {
             string[] rangeParts = attackInfo.range.Split('/');
             if (rangeParts.Length != 3) return false;
@@ -831,7 +847,7 @@ namespace Server
         }
 
         // CIRCLE vs CIRCLE 충돌 판정 (ScheduleManager용)
-        private bool IsCircleVsCircleCollisionInSchedule(C_EntityAttackCheck packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
+        private bool IsCircleVsCircleCollisionInSchedule(C_EntityAttack packet, CommonSession target, CommonSession attacker, AttackInfoData attackInfo)
         {
             // range를 반지름으로 사용 (CIRCLE의 경우 단일 값)
             if (!float.TryParse(attackInfo.range, out float attackRadius))

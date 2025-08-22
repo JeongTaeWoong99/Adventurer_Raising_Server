@@ -196,12 +196,23 @@
 
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
-    <!-- 공격에 대해서, 체크 -->
-    <packet name = "C_EntityAttackCheck">
+    <!-- 모든 공격들 통합 패킷 -->
+    <packet name = "C_EntityAttack">
         <float  name = "createPosX"/>
         <float  name = "createPosY"/>
         <float  name = "createPosZ"/>
         <string name = "attackSerial"/>
+    </packet>
+
+    <!-- 공격이 공격 이펙트를 생성해야 하는 경우, 브로드캐스트 -->
+    <packet name = "S_BroadcastEntitySkillCreate">
+        <int    name = "ID"/>
+        <int    name = "entityType"/>
+        <string name = "skillCreatePos"/>
+        <float  name = "moveSpeed"/>
+        <string name = "attackEffectSerial"/>
+        <float  name = "duration"/>
+        <string name = "type"/>
     </packet>
 
     <!-- 공격에 대해서, 체크한 리스트 결과를 브로드캐스트-->
@@ -220,27 +231,6 @@
             <float  name = "hitMoveDirY"/>
             <float  name = "hitMoveDirZ"/>
         </list>
-    </packet>
-
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
-    <!-- 스킬 생성 패킷 -->
-    <packet name = "C_EntitySkillCreate">
-        <float  name = "createPosX"/>
-        <float  name = "createPosY"/>
-        <float  name = "createPosZ"/>
-        <string name = "attackSerial"/>
-    </packet>
-
-    <!-- 스킬 생성 브로드캐스트 -->
-    <packet name = "S_BroadcastEntitySkillCreate">
-        <int    name = "ID"/>
-        <int    name = "entityType"/>
-        <string name = "skillCreatePos"/>
-        <float  name = "moveSpeed"/>
-        <string name = "attackEffectSerial"/>
-        <float  name = "duration"/>
-        <string name = "type"/>
     </packet>
 
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
