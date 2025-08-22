@@ -109,8 +109,19 @@ namespace Server
             {
                 try
                 {
-                    task.Task?.Invoke();
-                    //Console.WriteLine($"[Schedule] 실행: {task.Description}");
+                    // ⚠️ 수정: 직접 실행하지 않고 GameRoom의 메인 큐로 전달
+                    if (!string.IsNullOrEmpty(task.RoomName) && Program.GameRooms.TryGetValue(task.RoomName, out var room))
+                    {
+                        // 메인 큐에 작업 추가 (실행하지 않고 전달만)
+                        room.Push(() => task.Task?.Invoke());
+                        Console.WriteLine($"[Schedule] 작업 전달: {task.Description} -> {task.RoomName}");
+                    }
+                    else
+                    {
+                        // 룸 정보가 없는 경우에만 직접 실행 (기존 호환성 유지)
+                        task.Task?.Invoke();
+                        Console.WriteLine($"[Schedule] 직접 실행: {task.Description} (룸 정보 없음)");
+                    }
                 }
                 catch (Exception ex)
                 {

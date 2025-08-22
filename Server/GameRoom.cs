@@ -44,6 +44,13 @@ namespace Server
 			// 대기 중인 작업들을 모든 클라이언트에게 전송하고 목록을 비우기.
 			// 서버의 Program.cs의 Main에서 정해진 초마다, 무한으로 루프하면서, 작동.
 			// 락을 잡지 않는 이유 JobQueue를 사용하기 때문에
+			
+			// ⚠️ 추가: 스케줄된 작업들이 메인 큐를 통해 순차적으로 처리됨을 로그로 표시
+			if (_pendingList.Count > 0)
+			{
+				// Console.WriteLine($"[GameRoom] Flush 시작: {_pendingList.Count}개 작업 처리 중 (패킷 + 스케줄된 작업 포함)");
+			}
+			
 			var clientSessions = _commonSessions.OfType<ClientSession>().ToList(); // 컬렉션 수정 중 순회 문제 해결 => 안전한 복사본 생성
 			foreach (ClientSession c in clientSessions)
 				c.Send(_pendingList); // 다중 세그먼트 Send를 통해, _pendingList에 들어가 있는 모든 세그먼트 작업들을 보냄.
@@ -796,6 +803,7 @@ namespace Server
 					HandleMoveSkill(session, finalSkillX, finalSkillY, finalSkillZ, atkInfo);
 					break;
 				case "continue":
+					Console.WriteLine($"[스킬생성] Continue 스킬 시작: {session.SessionId} -> {atkInfo.name} (ScheduleManager 사용)");
 					HandleContinueSkill(session, finalSkillX, finalSkillY, finalSkillZ, atkInfo);
 					break;
 				case "create": case "immediate":  // Immediate 타입도 Create와 동일하게 처리
@@ -843,6 +851,15 @@ namespace Server
 		// Continue 타입 스킬 처리 (지속시간 동안 해당 위치에서 지속 데미지)
 		private void HandleContinueSkill(CommonSession caster, float skillX, float skillY, float skillZ, AttackInfoData attackInfo)
 		{
+			// ⚠️ 안전장치 추가: 스킬 실행 전 캐스터 상태 검증
+			if (caster == null || !caster.Live || caster.CurrentHP <= 0)
+			{
+				Console.WriteLine($"[Continue스킬] 스킬 실행 불가: 캐스터가 유효하지 않음 - SessionId={caster?.SessionId}, Live={caster?.Live}, HP={caster?.CurrentHP}");
+				return; // 스킬 실행 중단
+			}
+			
+			Console.WriteLine($"[Continue스킬] 스킬 실행 시작: {caster.SessionId} -> {attackInfo.name}");
+			
 			// Continue 스킬은 attackTiming과 repeat을 AttackInfoData에서 직접 읽어옴
 			// ScheduleContinueSkill에서 attackSerial로 데이터를 가져오므로 여기서는 파라미터만 전달
 			ScheduleContinueSkill(caster, attackInfo.attackSerial, skillX, skillY, skillZ, 0f, 0, DateTime.UtcNow);
@@ -1067,35 +1084,36 @@ namespace Server
 			
 			Console.WriteLine($"[Continue스킬] 공격간격:{attackTiming:F3}초, 반복횟수:{repeat}회, 총시간:{attackTiming * repeat:F3}초");
 			
-			// 정확한 간격 보장을 위해 전용 타이머 루프 사용 (ScheduleManager 미사용)
-			System.Threading.Tasks.Task.Run(async () =>
+			// ⚠️ 수정: Task.Run 대신 ScheduleManager 사용
+			// 모든 작업을 메인 큐를 통해 순차적으로 처리하여 데이터 경합 방지
+			for (int i = 0; i < repeat; i++)
 			{
-				for (int currentCount = 0; currentCount < repeat; currentCount++)
+				DateTime executeTime = DateTime.UtcNow.AddSeconds(attackTiming * i);
+				
+				ScheduleManager.Instance.ScheduleTask(executeTime, () =>
 				{
-					// 단일 스레드 보장을 위해 GameRoom 큐에 푸시
-					this.Push(() =>
-					{
-						Console.WriteLine($"[Continue실시간] 단계:{currentCount + 1}/{repeat}, 간격:{attackTiming:F3}초");
-						CheckContinueSkillHit(caster, attackSerial, skillX, skillY, skillZ);
-					});
-					
-					// 마지막 반복이면 종료
-					if (currentCount == repeat - 1)
-					{
-						float elapsedMs = (float)(DateTime.UtcNow - startTime).TotalMilliseconds;
-						this.Push(() => Console.WriteLine($"[Continue실시간완료] 총{repeat}회, 경과:{elapsedMs:F0}ms / 목표:{attackTiming * repeat * 1000:F0}ms"));
-						break;
-					}
-					
-					// attackTiming 간격만큼 대기 (밀리초 단위)
-					await System.Threading.Tasks.Task.Delay((int)(attackTiming * 1000)).ConfigureAwait(false);
-				}
-			});
+                    // 메인 큐로 작업 전달 (실행하지 않고)
+                    this.Push(() =>
+                    {
+                        Console.WriteLine($"[Continue실시간] 단계:{i + 1}/{repeat}, 간격:{attackTiming:F3}초");
+                        CheckContinueSkillHit(caster, attackSerial, skillX, skillY, skillZ);
+                    });
+                }, $"ContinueSkill_{attackSerial}_{i}", caster.SessionId, SceneName);
+			}
+			
+			Console.WriteLine($"[Continue스킬] {repeat}회 스케줄 완료 - ScheduleManager 사용");
 		}
 
 		// Continue 스킬의 공격 체크
 		private void CheckContinueSkillHit(CommonSession caster, string attackSerial, float skillX, float skillY, float skillZ)
 		{
+			// ⚠️ 안전장치 추가: 캐스터 상태 검증
+			if (caster == null || !caster.Live || caster.CurrentHP <= 0)
+			{
+				Console.WriteLine($"[Continue스킬] 캐스터가 유효하지 않음: SessionId={caster?.SessionId}, Live={caster?.Live}, HP={caster?.CurrentHP}");
+				return; // 스킬 중단
+			}
+			
 			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
 			if (attackInfo == null) return;
 			
