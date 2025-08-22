@@ -46,8 +46,8 @@ public class AttackInfoData
     public string buffType;
     public string coolTime;
     public string penetration;
-    public string skillSerial;
-    public string effectSerial;
+    public string attackEffectSerial;
+    public string hitEffectSerial;
     public string image;
 }
 [Serializable]

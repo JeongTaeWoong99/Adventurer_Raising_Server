@@ -425,7 +425,12 @@ namespace Server
 		public void SkillCreate(CommonSession session, C_EntitySkillCreate packet)
 		{
 			_skillManager.HandleSkillCreate(session, packet);
-	}
+		}
+
+		// public void Attack(CommonSession session, C_EntityAttack packet)
+		// {
+		// 	
+		// }
 	
 		#endregion
 		
@@ -439,7 +444,7 @@ namespace Server
 		/// </summary>
 		public void ProcessScheduledAttack(CommonSession attacker, int attackNumber)
 		{
-			//Console.WriteLine($"[Schedule] {attacker.SessionId} 자동 공격 실행 (A{attacker.SerialNumber}_{attackNumber})");
+			//Console.WriteLine($"[Schedule] {attacker.SessionId} 자동 공격 실행 (A_{attacker.SerialNumber}_{attackNumber})");
 			// 가상의 AttackCheck 패킷 생성하여 기존 로직 재사용
 			// attackNumber는 현재 AttackInfo 시트 구조상 사용되지 않음 (향후 확장 가능)
 			var virtualAttackPacket = CreateVirtualAttackPacket(attacker, attackNumber);
@@ -457,8 +462,8 @@ namespace Server
 		/// </summary>
 		private C_EntityAttackCheck CreateVirtualAttackPacket(CommonSession attacker, int attackNumber)
 		{
-			// AttackInfoData 시트 참조 : O001, 1 → AO001_1  /  M000, 2 → AM000_2
-			string attackSerial = $"A{attacker.SerialNumber}_{attackNumber}";
+			// AttackInfoData 시트 참조 : O001, 1 → A_O001_1  /  M000, 2 → A_M000_2
+			string attackSerial = $"A_{attacker.SerialNumber}_{attackNumber}";
 			AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
 			
 			if (attackInfo == null)

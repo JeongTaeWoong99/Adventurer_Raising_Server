@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<!-- 
-  ※ 플레이어의 C_ 즉, 플레이어가 보내는 패킷들은 ID가 필요없다.(어짜피 보내는 ID가 자신뿐이라, 자동 부여됨.)
-  ※ S_는 플레이어, 오브젝트, 몬스터 모두가 보낼 수 있기 때문에, ID와 타입이 필요하다.
--->
+        <!-- 
+          ※ 플레이어의 C_ 즉, 플레이어가 보내는 패킷들은 ID가 필요없다.(어짜피 보내는 ID가 자신뿐이라, 자동 부여됨.)
+          ※ S_는 플레이어, 오브젝트, 몬스터 모두가 보낼 수 있기 때문에, ID와 타입이 필요하다.
+        -->
 
-<!-- S_BroadcastPlayerEnterGame와  S_BroadcastPlayerList는 동일한 패킷 유지해야 함...
-     ID부터 형식이 동일해야 함. 클라가 서버 연결 시, EnterGame을 보내기 때문에, GameRoom에 값들을 설정해 주어야 하고,
-     그 설정된 값들을 이용하여, PlayerList를 보내줘야 하기 때문!!! -->
+        <!-- S_BroadcastPlayerEnterGame와  S_BroadcastPlayerList는 동일한 패킷 유지해야 함...
+             ID부터 형식이 동일해야 함. 클라가 서버 연결 시, EnterGame을 보내기 때문에, GameRoom에 값들을 설정해 주어야 하고,
+             그 설정된 값들을 이용하여, PlayerList를 보내줘야 하기 때문!!! -->
 
 <PDL>
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <packet name = "C_RequestMakeId">
         <string name = "email"/>
         <string name = "password"/>
@@ -26,7 +26,7 @@
         <string name = "email"/>
         <string name = "password"/>
     </packet>
-    
+
     <packet name = "S_LoginResult">
         <bool   name = "isSuccess"/>
         <string name = "resultText"/>
@@ -41,8 +41,8 @@
         <string name = "savedScene"/>
         <string name = "savedPosition"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <!-- 세팅이 끝나면, 자기 자신 및 모든 플레이어 Room.Enter를 통해, 정보를 받아옴  -->
     <packet name = "S_BroadcastEntityList">
@@ -65,7 +65,7 @@
             <int    name = "animationID"/>
         </list>
     </packet>
-    
+
     <!-- 다른 플레이어들에게 엔티티 입장 알리기-->
     <packet name = "S_BroadcastEntityEnter">
         <int    name = "ID"/>
@@ -82,14 +82,14 @@
         <float  name = "rotationY"/>
         <int    name = "animationID"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <packet name = "C_SceneChange">
         <string name = "mmNumber"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <!-- 클라이언트 전용 -->
     <packet name = "C_EntityLeave">
@@ -100,9 +100,9 @@
         <int    name = "ID"/>
         <int    name = "entityType"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <!-- 애니메이션 or 히트 등등 들어온 정보에 따라서, 서버에서 처리를 하고, 변경된 정보를 서버에서 브로드캐스트 -->
     <packet name = "S_BroadcastEntityInfoChange">
         <int  name   = "ID"/>
@@ -114,26 +114,26 @@
         <bool name   = "invincibility"/>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <packet name = "C_EntityMove">
-      <bool  name = "isInstantAction"/>
-      <float name = "posX"/>
-      <float name = "posY"/>
-      <float name = "posZ"/>
+        <bool  name = "isInstantAction"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
     </packet>
-    
+
     <packet name = "S_BroadcastEntityMove">
-      <int   name = "ID"/>
-      <int   name = "entityType"/>
-      <bool  name = "isInstantAction"/>
-      <float name = "posX"/>
-      <float name = "posY"/>
-      <float name = "posZ"/>
+        <int   name = "ID"/>
+        <int   name = "entityType"/>
+        <bool  name = "isInstantAction"/>
+        <float name = "posX"/>
+        <float name = "posY"/>
+        <float name = "posZ"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <packet name = "C_EntityRotation">
         <float name = "rotationY"/>
     </packet>
@@ -143,20 +143,20 @@
         <int   name = "entityType"/>
         <float name = "rotationY"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <packet name = "C_EntityAnimation">
-      <int name = "animationID"/>
-    </packet>
-    
-    <packet name = "S_BroadcastEntityAnimation">
-      <int name = "ID"/>
-      <int name = "entityType"/>
-      <int name = "animationID"/>
+        <int name = "animationID"/>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <packet name = "S_BroadcastEntityAnimation">
+        <int name = "ID"/>
+        <int name = "entityType"/>
+        <int name = "animationID"/>
+    </packet>
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
     <packet name = "C_EntityDash">
         <int   name = "animationID"/>
@@ -164,7 +164,7 @@
         <float name = "dirY"/>
         <float name = "dirZ"/>
     </packet>
-    
+
     <packet name = "S_BroadcastEntityDash">
         <int   name = "ID"/>
         <int   name = "entityType"/>
@@ -173,9 +173,9 @@
         <float name = "dirY"/>
         <float name = "dirZ"/>
     </packet>
-    
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    
+
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <packet name = "C_EntityAttackAnimation">
         <int   name = "animationID"/>
         <int   name = "attackAnimeNumID"/>
@@ -183,7 +183,7 @@
         <float name = "dirY"/>
         <float name = "dirZ"/>
     </packet>
-    
+
     <packet name = "S_BroadcastEntityAttackAnimation">
         <int   name = "ID"/>
         <int   name = "entityType"/>
@@ -194,9 +194,9 @@
         <float name = "dirZ"/>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
-    <!-- 1개의 단일 공격에 대해서, 체크 -->
+    <!-- 공격에 대해서, 체크 -->
     <packet name = "C_EntityAttackCheck">
         <float  name = "createPosX"/>
         <float  name = "createPosY"/>
@@ -204,16 +204,16 @@
         <string name = "attackSerial"/>
     </packet>
 
-    <!-- 1개의 단일 공격에 대해서, 체크한 리스트 결과를 브로드캐스트-->
+    <!-- 공격에 대해서, 체크한 리스트 결과를 브로드캐스트-->
     <packet name = "S_BroadcastEntityAttackResult">
         <!-- 공격을 가한 엔티티의 정보 -->
-        <int    name = "attackerID"/> 
+        <int    name = "attackerID"/>
         <int    name = "attackerEntityType"/>
         <int    name = "damage"/>
-        <string name = "effectSerial"/>
+        <string name = "hitEffectSerial"/>
 
         <!-- 공격을 받은 엔티티 리스트 -->
-        <list  name = "entity"> 
+        <list  name = "entity">
             <int    name = "targetID"/>
             <int    name = "targetEntityType"/>
             <float  name = "hitMoveDirX"/>
@@ -222,8 +222,8 @@
         </list>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
     <!-- 스킬 생성 패킷 -->
     <packet name = "C_EntitySkillCreate">
         <float  name = "createPosX"/>
@@ -231,29 +231,29 @@
         <float  name = "createPosZ"/>
         <string name = "attackSerial"/>
     </packet>
-    
+
     <!-- 스킬 생성 브로드캐스트 -->
     <packet name = "S_BroadcastEntitySkillCreate">
         <int    name = "ID"/>
         <int    name = "entityType"/>
         <string name = "skillCreatePos"/>
         <float  name = "moveSpeed"/>
-        <string name = "attackSerial"/>
+        <string name = "attackEffectSerial"/>
         <float  name = "duration"/>
         <string name = "type"/>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- 플레이어 전용 채팅 보내기 -->
     <packet name = "C_Chatting">
         <string name = "contents"/>
     </packet>
-    
+
     <!-- 플레이어 전용 채팅 브로드케스트 -->
     <packet name = "S_BroadcastChatting">
         <int    name = "ID"/>
         <string name = "contents"/>
     </packet>
 
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 </PDL>

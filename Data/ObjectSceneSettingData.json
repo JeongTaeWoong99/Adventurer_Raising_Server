@@ -1,16 +1,22 @@
 {
   "objectSceneSettingInfos": [
     {
-      "mmNumber": "O04",
-      "sceneName": "Stage1",
-      "serialNumber": "O001",
-      "makePos": "-19 / 0.0 / 40.0"
-    },
-    {
       "mmNumber": "O03",
       "sceneName": "Village",
       "serialNumber": "O001",
       "makePos": "6 / 0.0 / -20.0"
+    },
+    {
+      "mmNumber": "O00",
+      "sceneName": "Village",
+      "serialNumber": "O000",
+      "makePos": "-6 / 0.0 / 0.0"
+    },
+    {
+      "mmNumber": "O04",
+      "sceneName": "Stage1",
+      "serialNumber": "O001",
+      "makePos": "-19 / 0.0 / 40.0"
     },
     {
       "mmNumber": "O05",
@@ -29,12 +35,6 @@
       "sceneName": "Village",
       "serialNumber": "O001",
       "makePos": "-6 / 0.0 / -20.0"
-    },
-    {
-      "mmNumber": "O00",
-      "sceneName": "Village",
-      "serialNumber": "O000",
-      "makePos": "-6 / 0.0 / 0.0"
     }
   ]
 }

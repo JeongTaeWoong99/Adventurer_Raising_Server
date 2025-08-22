@@ -72,7 +72,7 @@ namespace Server
             S_BroadcastEntityAttackResult attackResult = new S_BroadcastEntityAttackResult {
                 attackerID         = attacker.SessionId,
                 attackerEntityType = attacker.EntityType,
-                effectSerial       = attackInfo.effectSerial
+                hitEffectSerial    = attackInfo.hitEffectSerial
             };
             
             // 데미지 계산 (기본 공격력 * 데미지 배수)

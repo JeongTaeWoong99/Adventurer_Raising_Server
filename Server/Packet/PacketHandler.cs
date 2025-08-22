@@ -285,6 +285,16 @@ class PacketHandler
 		}
 	}
 	
+	// public static void C_EntityAttackHandler(PacketSession session, IPacket packet)
+	// {
+	// 	C_EntityAttack attack = packet as C_EntityAttack;
+	// 	if (session is CommonSession commonSession && commonSession.Room != null)
+	// 	{
+	// 		GameRoom room = commonSession.Room;
+	// 		room.Push(() => room.Attack(commonSession, attack));
+	// 	}
+	// }
+	
 	public static void C_ChattingHandler(PacketSession session, IPacket packet)
 	{
 		C_Chatting chatting = packet as C_Chatting;
@@ -304,5 +314,6 @@ class PacketHandler
 			room.Push(() => room.SkillCreate(commonSession, skillCreate));
 		}
 	}
+	
 	#endregion
 }

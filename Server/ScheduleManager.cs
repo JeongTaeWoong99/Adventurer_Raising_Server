@@ -393,7 +393,7 @@ namespace Server
             // 오브젝트(트랩)은 공격1 반복
             if (session.SerialNumber.StartsWith("O"))
             {
-                string attackSerial = $"A{session.SerialNumber}_1";
+                string attackSerial = $"A_{session.SerialNumber}_1";
                 AttackInfoData info = Program.DBManager.GetAttackInfo(attackSerial);
                 if (info == null) return false;
 
@@ -422,7 +422,7 @@ namespace Server
                 // 모든 공격(1~3)을 체크하여 유효한 공격 확인
                 for (int i = 1; i <= 3; i++)
                 {
-                    string attackSerial = $"A{session.SerialNumber}_{i}";
+                    string attackSerial = $"A_{session.SerialNumber}_{i}";
                     var info = Program.DBManager.GetAttackInfo(attackSerial);
                     if (info == null)
                     {
@@ -495,7 +495,7 @@ namespace Server
             animState.LastAttackTime      = DateTime.UtcNow;
             
             // 쿨타임 기록
-            string attackSerial = $"A{session.SerialNumber}_{attackNumber}";
+            string attackSerial = $"A_{session.SerialNumber}_{attackNumber}";
             session.LastAttackTimes[attackSerial] = DateTime.UtcNow;
             session.AnimationId = 3;
 
@@ -526,7 +526,7 @@ namespace Server
             int attackNumber = animState.CurrentAttackNumber;
 
             // AttackInfo에서 애니메이션 길이 및 타이밍을 가져온다.
-            string attackSerial = $"A{session.SerialNumber}_{attackNumber}"; // 예: AM000_1
+            string attackSerial = $"A_{session.SerialNumber}_{attackNumber}"; // 예: A_M000_1
             AttackInfoData info = Program.DBManager.GetAttackInfo(attackSerial);
 
             // 기본값 지정 (정보가 없을 때 대비)
@@ -574,7 +574,7 @@ namespace Server
         /// </summary>
         private float GetAttackCooldown(string serialNumber, int attackNumber = 1)
         {
-            string attackSerial = $"A{serialNumber}_{attackNumber}";
+            string attackSerial = $"A_{serialNumber}_{attackNumber}";
             AttackInfoData info = Program.DBManager.GetAttackInfo(attackSerial);
             if (info == null) return 0f;
 
@@ -738,7 +738,7 @@ namespace Server
         /// </summary>
         private C_EntityAttackCheck CreateVirtualAttackPacketForCheck(CommonSession attacker, int attackNumber)
         {
-            string attackSerial = $"A{attacker.SerialNumber}_{attackNumber}";
+            string attackSerial = $"A_{attacker.SerialNumber}_{attackNumber}";
             AttackInfoData attackInfo = Program.DBManager.GetAttackInfo(attackSerial);
             
             if (attackInfo == null)
@@ -755,11 +755,11 @@ namespace Server
                 return null;
             }
 
-            // 공격 중심 = 본인 위치 + 앞(0.5m) + 약간 위(1m)
+            // 공격 중심 = 본인 위치 + createPos
             double rad = attacker.RotationY * Math.PI / 180.0;
             float forwardX = (float)Math.Sin(rad);
             float forwardZ = (float)Math.Cos(rad);
-            return new C_EntityAttackCheck {
+            return new C_EntityAttackCheck() {
                 createPosX = attacker.PosX,
                 createPosY = attacker.PosY,
                 createPosZ = attacker.PosZ,

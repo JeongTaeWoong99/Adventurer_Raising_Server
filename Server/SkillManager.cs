@@ -59,13 +59,13 @@ namespace Server
             // 브로드캐스트 패킷 생성 (x/y/z 형태의 문자열로 전송)
             S_BroadcastEntitySkillCreate skillPacket = new S_BroadcastEntitySkillCreate
             {
-                ID				= session.SessionId,
-                entityType      = session.EntityType,
-                skillCreatePos  = $"{finalSkillX} / {finalSkillY} / {finalSkillZ}", // x / y / z 형태
-                moveSpeed	    = moveSpeed,
-                attackSerial    = packet.attackSerial,
-                duration        = duration,
-                type            = atkInfo.type
+                ID				   = session.SessionId,
+                entityType         = session.EntityType,
+                skillCreatePos     = $"{finalSkillX} / {finalSkillY} / {finalSkillZ}", // x / y / z 형태
+                moveSpeed	       = moveSpeed,
+                attackEffectSerial = packet.attackSerial,
+                duration           = duration,
+                type               = atkInfo.type
             };
 
             // 모든 클라이언트에게 스킬 생성 알림
@@ -460,11 +460,11 @@ namespace Server
             {
                 S_BroadcastEntityAttackResult attackResult = new S_BroadcastEntityAttackResult
                 {
-                    attackerID = attacker.SessionId,
+                    attackerID         = attacker.SessionId,
                     attackerEntityType = attacker.EntityType,
-                    damage = (int)(attacker.Damage * float.Parse(attackInfo.damageMultiplier)),
-                    effectSerial = attackInfo.effectSerial,
-                    entitys = hitList
+                    damage             = (int)(attacker.Damage * float.Parse(attackInfo.damageMultiplier)),
+                    hitEffectSerial    = attackInfo.hitEffectSerial,
+                    entitys            = hitList
                 };
                 
                 _gameRoom.Broadcast(attackResult.Write());
