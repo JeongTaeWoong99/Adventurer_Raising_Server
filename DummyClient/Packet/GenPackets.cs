@@ -28,7 +28,7 @@ public enum PacketID
 	C_EntityAttackAnimation = 1019,
 	S_BroadcastEntityAttackAnimation = 1020,
 	C_EntityAttack = 1021,
-	S_BroadcastEntitySkillCreate = 1022,
+	S_BroadcastEntityAttackEffectCreate = 1022,
 	S_BroadcastEntityAttackResult = 1023,
 	C_Chatting = 1024,
 	S_BroadcastChatting = 1025,
@@ -1212,17 +1212,17 @@ public class C_EntityAttack : IPacket
 		return SendBufferHelper.Close(count);
 	}
 }
-public class S_BroadcastEntitySkillCreate : IPacket
+public class S_BroadcastEntityAttackEffectCreate : IPacket
 {
 	public int ID;
 	public int entityType;
-	public string skillCreatePos;
-	public float moveSpeed;
 	public string attackEffectSerial;
+	public string attackEffectCreatePos;
+	public float moveSpeed;
 	public float duration;
 	public string type;
 
-	public ushort Protocol { get { return (ushort)PacketID.S_BroadcastEntitySkillCreate; } }
+	public ushort Protocol { get { return (ushort)PacketID.S_BroadcastEntityAttackEffectCreate; } }
 
 	public void Read(ArraySegment<byte> segment)
 	{
@@ -1233,16 +1233,16 @@ public class S_BroadcastEntitySkillCreate : IPacket
 		count += sizeof(int);
 		this.entityType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
-		ushort skillCreatePosLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		this.skillCreatePos = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, skillCreatePosLen);
-		count += skillCreatePosLen;
-		this.moveSpeed = BitConverter.ToSingle(segment.Array, segment.Offset + count);
-		count += sizeof(float);
 		ushort attackEffectSerialLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 		count += sizeof(ushort);
 		this.attackEffectSerial = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, attackEffectSerialLen);
 		count += attackEffectSerialLen;
+		ushort attackEffectCreatePosLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.attackEffectCreatePos = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, attackEffectCreatePosLen);
+		count += attackEffectCreatePosLen;
+		this.moveSpeed = BitConverter.ToSingle(segment.Array, segment.Offset + count);
+		count += sizeof(float);
 		this.duration = BitConverter.ToSingle(segment.Array, segment.Offset + count);
 		count += sizeof(float);
 		ushort typeLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
@@ -1257,22 +1257,22 @@ public class S_BroadcastEntitySkillCreate : IPacket
 		ushort count = 0;
 
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_BroadcastEntitySkillCreate), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_BroadcastEntityAttackEffectCreate), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes(this.ID), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.entityType), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
-		ushort skillCreatePosLen = (ushort)Encoding.Unicode.GetBytes(this.skillCreatePos, 0, this.skillCreatePos.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-		Array.Copy(BitConverter.GetBytes(skillCreatePosLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		count += skillCreatePosLen;
-		Array.Copy(BitConverter.GetBytes(this.moveSpeed), 0, segment.Array, segment.Offset + count, sizeof(float));
-		count += sizeof(float);
 		ushort attackEffectSerialLen = (ushort)Encoding.Unicode.GetBytes(this.attackEffectSerial, 0, this.attackEffectSerial.Length, segment.Array, segment.Offset + count + sizeof(ushort));
 		Array.Copy(BitConverter.GetBytes(attackEffectSerialLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		count += attackEffectSerialLen;
+		ushort attackEffectCreatePosLen = (ushort)Encoding.Unicode.GetBytes(this.attackEffectCreatePos, 0, this.attackEffectCreatePos.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(attackEffectCreatePosLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += attackEffectCreatePosLen;
+		Array.Copy(BitConverter.GetBytes(this.moveSpeed), 0, segment.Array, segment.Offset + count, sizeof(float));
+		count += sizeof(float);
 		Array.Copy(BitConverter.GetBytes(this.duration), 0, segment.Array, segment.Offset + count, sizeof(float));
 		count += sizeof(float);
 		ushort typeLen = (ushort)Encoding.Unicode.GetBytes(this.type, 0, this.type.Length, segment.Array, segment.Offset + count + sizeof(ushort));

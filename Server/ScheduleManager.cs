@@ -299,9 +299,21 @@ namespace Server
                     
                     // 공격이 가능한지 체크 (방향 정보 포함)
                     // 유효한 공격이 있음 => 공격 진행
-                    // 유효한 공격이 없음 => 이동 작업 진행
-                    if (CheckPossibleAttack(monster, animState, now, targetPlayer, closestDistance, dirX, dirZ))
+                    // 공격 범위 내이지만 쿨타임 중 => 추적 중지 (제자리 대기)
+                    // 공격 범위 밖 => 이동 작업 진행
+                    var attackResult = CheckPossibleAttack(monster, animState, now, targetPlayer, closestDistance, dirX, dirZ);
+                    if (attackResult.attackExecuted)
                         return;
+                    
+                    if (attackResult.inRangeButCooldown)
+                    {
+                        // 공격 범위 내이지만 쿨타임 중 => 제자리에서 대기 (추적 중지)
+                        if (animState.CurrentAnimation == Define.Anime.Run)
+                        {
+                            TransitionToIdle(monster, animState);
+                        }
+                        return;
+                    }
                     
                     // Idle 상태에서만 Run으러 전환 및 전파
                     if (wasIdle)
@@ -384,21 +396,32 @@ namespace Server
         }
         
         /// <summary>
+        /// 공격 체크 결과
+        /// </summary>
+        private struct AttackCheckResult
+        {
+            public bool attackExecuted;      // 공격이 실행되었는지
+            public bool inRangeButCooldown;  // 범위 내이지만 쿨타임 중인지
+        }
+
+        /// <summary>
         /// 가능 공격 체크
         /// - 반복 오브젝트는 쿨타임 기반 반복 공격 발생
         /// - 몬스터는 공격 가능 1~3 중, 범위 + 쿨타임 체크해서, 발생
         /// </summary>
-        private bool CheckPossibleAttack(CommonSession session, AnimationState animState, DateTime now, CommonSession targetPlayer = null, float distanceToTarget = 0f, float dirX = 0f, float dirZ = 0f)
+        private AttackCheckResult CheckPossibleAttack(CommonSession session, AnimationState animState, DateTime now, CommonSession targetPlayer = null, float distanceToTarget = 0f, float dirX = 0f, float dirZ = 0f)
         {
+            var result = new AttackCheckResult { attackExecuted = false, inRangeButCooldown = false };
+
             // 오브젝트(트랩)은 공격1 반복
             if (session.SerialNumber.StartsWith("O"))
             {
                 string attackSerial = $"A_{session.SerialNumber}_1";
                 AttackInfoData info = Program.DBManager.GetAttackInfo(attackSerial);
-                if (info == null) return false;
+                if (info == null) return result;
 
                 float.TryParse(info.coolTime, out float cooldown);
-                if (cooldown <= 0) return false;
+                if (cooldown <= 0) return result;
 
                 DateTime lastTime = DateTime.MinValue;
                 session.LastAttackTimes.TryGetValue(attackSerial, out lastTime);
@@ -406,18 +429,19 @@ namespace Server
                 if ((now - lastTime).TotalSeconds >= cooldown)
                 {
                     StartAttackAnimation(session, animState, 1);
-                    return true;
+                    result.attackExecuted = true;
                 }
-                return false;
+                return result;
             }
 
             // 몬스터: 여러 공격 중 조건 만족하는 것 선택
             if (session.SerialNumber.StartsWith("M"))
             {
                 // 타겟 플레이어가 없으면 공격 불가
-                if (targetPlayer == null) return false;
+                if (targetPlayer == null) return result;
                 
                 List<int> candidateAttacks = new List<int>();
+                bool anyInRange = false;
                 
                 // 모든 공격(1~3)을 체크하여 유효한 공격 확인
                 for (int i = 1; i <= 3; i++)
@@ -430,59 +454,64 @@ namespace Server
                         continue;
                     }
                     
-                    // 쿨타임 체크
-                    float.TryParse(info.coolTime, out float cooldown);
-                    if (cooldown < 0)
+                    // normalAttackRange 기반 범위 체크 (공격 가능 여부 판단)
+                    bool inRange = IsInNormalAttackRange(session, targetPlayer);
+                    if (inRange)
                     {
-                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 쿨타임 설정 오류 (coolTime: {info.coolTime})");
-                        continue;
-                    }
-
-                    DateTime lastTime = DateTime.MinValue;
-                    session.LastAttackTimes.TryGetValue(attackSerial, out lastTime);
-                    double elapsedSeconds = (now - lastTime).TotalSeconds;
-                    
-                    if (elapsedSeconds < cooldown)
-                    {
-                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 쿨다운 중 (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, 남은시간: {(cooldown - elapsedSeconds):F1}초)");
-                        continue;
-                    }
-                    
-                    // CreateVirtualAttackPacket + GameRoom.IsInAttackRange 재사용
-                    var virtualPacket = CreateVirtualAttackPacketForCheck(session, i);
-                    if (virtualPacket != null && session.Room != null)
-                    {
-                        // GameRoom의 기존 IsInAttackRange 로직을 재사용
-                        bool inRange = IsInAttackRangeUsingGameRoomLogic(virtualPacket, targetPlayer, session);
-                        if (inRange)
+                        anyInRange = true;
+                        
+                        // 쿨타임 체크
+                        float.TryParse(info.coolTime, out float cooldown);
+                        if (cooldown < 0)
                         {
-                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, OBB 박스 범위 내)");
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 쿨타임 설정 오류 (coolTime: {info.coolTime})");
+                            continue;
+                        }
+
+                        DateTime lastTime = DateTime.MinValue;
+                        session.LastAttackTimes.TryGetValue(attackSerial, out lastTime);
+                        double elapsedSeconds = (now - lastTime).TotalSeconds;
+                        
+                        if (elapsedSeconds >= cooldown)
+                        {
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 사용 가능! (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초, 범위 내)");
                             candidateAttacks.Add(i);
                         }
                         else
                         {
-                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 타겟 범위 밖 (OBB 박스 범위 밖, 쿨타임: OK)");
+                            Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 범위 내이지만 쿨다운 중 (쿨타임: {cooldown}초, 경과: {elapsedSeconds:F1}초)");
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[공격 체크] {session.SerialNumber} 공격{i}: 타겟 범위 밖");
                     }
                 }
 
-                if (candidateAttacks.Count == 0) 
+                if (candidateAttacks.Count > 0) 
                 {
-                    Console.WriteLine($"[공격 체크] {session.SerialNumber}: 사용 가능한 공격 없음 (쿨다운 또는 범위 밖)");
-                    return false;
+                    // 사용 가능한 공격들 중 랜덤 선택
+                    Random rand = new Random();
+                    int attackNumber = candidateAttacks[rand.Next(candidateAttacks.Count)];
+                    Console.WriteLine($"[공격 선택] {session.SerialNumber}: 공격{attackNumber} 선택됨 (후보: [{string.Join(", ", candidateAttacks)}])");
+                    
+                    // 공격 실행
+                    StartAttackAnimation(session, animState, attackNumber, dirX, dirZ);
+                    result.attackExecuted = true;
                 }
-
-                // 사용 가능한 공격들 중 랜덤 선택
-                Random rand = new Random();
-                int attackNumber = candidateAttacks[rand.Next(candidateAttacks.Count)];
-                Console.WriteLine($"[공격 선택] {session.SerialNumber}: 공격{attackNumber} 선택됨 (후보: [{string.Join(", ", candidateAttacks)}])");
-                
-                // 공격 실행 - GameRoom에서 범위 내 모든 플레이어들에게 데미지 적용 (방향 정보 포함)
-                StartAttackAnimation(session, animState, attackNumber, dirX, dirZ);
-                return true;
+                else if (anyInRange)
+                {
+                    // 범위 내에 있지만 모든 공격이 쿨타임 중
+                    result.inRangeButCooldown = true;
+                    Console.WriteLine($"[공격 체크] {session.SerialNumber}: 범위 내이지만 모든 공격이 쿨타임 중 - 추적 중지");
+                }
+                else
+                {
+                    Console.WriteLine($"[공격 체크] {session.SerialNumber}: 모든 공격이 범위 밖");
+                }
             }
             
-            return false;
+            return result;
         }    
         
         // Attack 애니메이션 시작
@@ -747,33 +776,29 @@ namespace Server
                 return null;
             }
 
-            // 공격 범위 파싱 검증
-            string[] rangeParts = attackInfo.range.Split('/');
-            if (rangeParts.Length != 3)
+            // 공격 범위 파싱 검증 (Circle 타입은 단일 값, Box 타입은 3개 값)
+            if (attackInfo.colliderType?.ToUpper() == "BOX")
             {
-                Console.WriteLine($"[Error] 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
-                return null;
+                string[] rangeParts = attackInfo.range.Split('/');
+                if (rangeParts.Length != 3)
+                {
+                    Console.WriteLine($"[Error] BOX 타입 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+                    return null;
+                }
+            }
+            else if (attackInfo.colliderType?.ToUpper() == "CIRCLE")
+            {
+                if (!float.TryParse(attackInfo.range, out _))
+                {
+                    Console.WriteLine($"[Error] CIRCLE 타입 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+                    return null;
+                }
             }
 
-            // fixedCreatePos에 따른 공격 위치 결정
-            float finalCreatePosX, finalCreatePosY, finalCreatePosZ;
-            
-            if (bool.Parse(attackInfo.fixedCreatePos))
-            {
-                // fixedCreatePos가 TRUE면 '본인 위치 + createPos 오프셋' 사용
-                var attackWorldPos = Extension.ComputeCreateWorldPos(attacker.PosX, attacker.PosY, attacker.PosZ, 
-                    attacker.RotationY, attackInfo.createPos);
-                finalCreatePosX = attackWorldPos.X;
-                finalCreatePosY = attackWorldPos.Y;
-                finalCreatePosZ = attackWorldPos.Z;
-            }
-            else
-            {
-                // fixedCreatePos가 FALSE면 본인 위치만 사용 (몬스터/오브젝트는 보통 본인 위치에서 공격)
-                finalCreatePosX = attacker.PosX;
-                finalCreatePosY = attacker.PosY;
-                finalCreatePosZ = attacker.PosZ;
-            }
+            // AttackManager에서 실시간 계산하도록 본인 위치만 전달
+            float finalCreatePosX = attacker.PosX;
+                float finalCreatePosY = attacker.PosY;
+            float finalCreatePosZ = attacker.PosZ;
             
             return new C_EntityAttack() {
                 createPosX   = finalCreatePosX,
@@ -781,6 +806,45 @@ namespace Server
                 createPosZ   = finalCreatePosZ,
                 attackSerial = attackSerial,
             };
+        }
+
+        /// <summary>
+        /// normalAttackRange 기반 간단한 범위 체크 (공격 가능 여부 판단용)
+        /// </summary>
+        private bool IsInNormalAttackRange(CommonSession attacker, CommonSession target)
+        {
+            CharacterInfoData characterInfo = Program.DBManager.GetCharacterInfo(attacker.SerialNumber, attacker.CurrentLevel);
+            if (characterInfo == null) return false;
+
+            string normalAttackRange = characterInfo.normalAttackRange;
+            
+            // normalAttackRange가 "6" 형태면 Circle 범위 (반지름)
+            if (!normalAttackRange.Contains("/"))
+            {
+                float radius = float.Parse(normalAttackRange);
+                float deltaX = target.PosX - attacker.PosX;
+                float deltaZ = target.PosZ - attacker.PosZ;
+                float distance = (float)Math.Sqrt(deltaX * deltaX + deltaZ * deltaZ);
+                bool inRange = distance <= radius;
+                Console.WriteLine($"[normalAttackRange체크] {attacker.SerialNumber}({attacker.SessionId}) -> {target.SessionId}: 거리={distance:F2}m, 범위={radius}m, 결과={inRange}");
+                return inRange;
+            }
+            // normalAttackRange가 "1.0 / 1.0 / 1.0" 형태면 Box 범위
+            else
+            {
+                string[] rangeParts = normalAttackRange.Split('/');
+                if (rangeParts.Length != 3) return false;
+                
+                float rangeX = float.Parse(rangeParts[0].Trim()) * 2f;
+                float rangeZ = float.Parse(rangeParts[2].Trim()) * 2f;
+                
+                float deltaX = Math.Abs(target.PosX - attacker.PosX);
+                float deltaZ = Math.Abs(target.PosZ - attacker.PosZ);
+                
+                bool inRange = deltaX <= rangeX && deltaZ <= rangeZ;
+                Console.WriteLine($"[normalAttackRange체크] {attacker.SerialNumber}({attacker.SessionId}) -> {target.SessionId}: 거리=({deltaX:F2},{deltaZ:F2}), 범위=({rangeX:F2},{rangeZ:F2}), 결과={inRange}");
+                return inRange;
+            }
         }
 
         /// <summary>

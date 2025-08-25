@@ -91,13 +91,25 @@ namespace Server
             // 이동 거리 계산
             float totalDistance = moveSpeed * duration;
             
-            // 이동 방향 계산 (플레이어가 바라보는 방향)
+            // 이동 방향 계산 (플레이어와 몬스터 좌표계 차이 고려)
             double radians = attacker.RotationY * Math.PI / 180.0;
-            float dirX = (float)Math.Sin(radians);
-            float dirZ = (float)Math.Cos(radians);
+            float dirX, dirZ;
+            
+            if (attacker.EntityType == (int)Define.Layer.Player)
+            {
+                // 플레이어: 클라이언트 좌표계 방식
+                dirX = (float)Math.Sin(radians);
+                dirZ = (float)Math.Cos(radians);
+            }
+            else
+            {
+                // 몬스터/오브젝트: 서버 좌표계 방식
+                dirX = (float)Math.Cos(radians);
+                dirZ = (float)Math.Sin(radians);
+            }
             
             Console.WriteLine($"[Move공격] 캐스터 로테이션: {attacker.RotationY:F3}도");
-            Console.WriteLine($"[Move공격] 이동 방향: dirX={dirX:F3}, dirZ={dirZ:F3}");
+            Console.WriteLine($"[Move공격] 이동 방향: dirX={dirX:F3}, dirZ={dirZ:F3} ({(attacker.EntityType == (int)Define.Layer.Player ? "플레이어" : "몬스터")} 좌표계)");
             Console.WriteLine($"[Move공격] 시작 위치: ({finalSkillX:F3}, {finalSkillY:F3}, {finalSkillZ:F3})");
             Console.WriteLine($"[Move공격] 총 이동거리: {totalDistance:F3}, 지속시간: {duration:F3}초");
             
@@ -206,15 +218,15 @@ namespace Server
             float moveSpeed = float.Parse(attackInfo.moveSpeed);
 
             // 브로드캐스트 패킷 생성
-            S_BroadcastEntitySkillCreate skillPacket = new S_BroadcastEntitySkillCreate
+            S_BroadcastEntityAttackEffectCreate skillPacket = new S_BroadcastEntityAttackEffectCreate
             {
-                ID                 = attacker.SessionId,
-                entityType         = attacker.EntityType,
-                skillCreatePos     = $"{finalSkillX} / {finalSkillY} / {finalSkillZ}",
-                moveSpeed          = moveSpeed,
-                attackEffectSerial = attackInfo.attackEffectSerial,
-                duration           = duration,
-                type               = attackInfo.type
+                ID                    = attacker.SessionId,
+                entityType            = attacker.EntityType,
+                attackEffectCreatePos = $"{finalSkillX} / {finalSkillY} / {finalSkillZ}",
+                moveSpeed             = moveSpeed,
+                attackEffectSerial    = attackInfo.attackEffectSerial,
+                duration              = duration,
+                type                  = attackInfo.type
             };
 
             // 모든 클라이언트에게 스킬 생성 알림
@@ -283,7 +295,7 @@ namespace Server
             float moveSpeedFromData = float.Parse(attackInfo.moveSpeed);
             float durationFromData  = float.Parse(attackInfo.duration);
             
-            float intervalSeconds   = 0.05f; // 50ms 간격
+            float intervalSeconds   = 0.02f; // 20ms 간격
             float stepSize          = moveSpeedFromData * intervalSeconds; 
             int   totalSteps        = (int)MathF.Round(durationFromData / intervalSeconds);
             
@@ -490,8 +502,18 @@ namespace Server
             float dz = Math.Max(0, Math.Abs(localZ) - halfZ);
             
             float distanceSquared = dx * dx + dz * dz;
+            bool hit = distanceSquared <= (targetRadius * targetRadius);
+            
+            // 디버그 로그 (A_M001_1 공격일 때만)
+            if (attackInfo.attackSerial == "A_M001_1")
+            {
+                Console.WriteLine($"[Box충돌체크] {attackInfo.attackSerial}: 공격위치=({attackCenterX:F2},{attackCenterZ:F2}), 회전={rotationY:F1}도");
+                Console.WriteLine($"[Box충돌체크] 타겟위치=({targetX:F2},{targetZ:F2}), 타겟반경={targetRadius:F3}");
+                Console.WriteLine($"[Box충돌체크] Box크기=({checkRangeX:F2}x{checkRangeZ:F2}), 로컬좌표=({localX:F3},{localZ:F3})");
+                Console.WriteLine($"[Box충돌체크] 거리제곱={distanceSquared:F6}, 타겟반경제곱={targetRadius * targetRadius:F6}, 히트={hit}");
+            }
                 
-            return distanceSquared <= (targetRadius * targetRadius);
+            return hit;
         }
 
         /// <summary>
@@ -515,7 +537,16 @@ namespace Server
 
             float adjustedAttackRadius = attackRadius * 1.2f;
             float totalRadius = adjustedAttackRadius + targetRadius;
-            return distance <= totalRadius;
+            bool hit = distance <= totalRadius;
+            
+            // 디버그 로그 (A_M001_1 공격일 때만)
+            if (attackInfo.attackSerial == "A_M001_1")
+            {
+                Console.WriteLine($"[충돌체크] {attackInfo.attackSerial}: 공격위치=({attackCenterX:F2},{attackCenterZ:F2}), 타겟위치=({targetX:F2},{targetZ:F2})");
+                Console.WriteLine($"[충돌체크] 거리={distance:F3}, 공격반경={attackRadius:F3}*1.2={adjustedAttackRadius:F3}, 타겟반경={targetRadius:F3}, 총반경={totalRadius:F3}, 히트={hit}");
+            }
+            
+            return hit;
         }
 
         #endregion

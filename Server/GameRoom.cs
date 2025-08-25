@@ -447,33 +447,32 @@ namespace Server
 				return null;
 			}
 
-			// NEW: 공격 범위 파싱 (통합된 Attack과 동일한 방식)
-			string[] rangeParts = attackInfo.range.Split('/');
-			if (rangeParts.Length != 3)
+			// 공격 범위 파싱 검증 (Circle 타입은 단일 값, Box 타입은 3개 값)
+			if (attackInfo.colliderType?.ToUpper() == "BOX")
 			{
-				Console.WriteLine($"[Error] 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
-				return null;
+				string[] rangeParts = attackInfo.range.Split('/');
+				if (rangeParts.Length != 3)
+				{
+					Console.WriteLine($"[Error] BOX 타입 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+					return null;
+				}
+			}
+			else if (attackInfo.colliderType?.ToUpper() == "CIRCLE")
+			{
+				if (!float.TryParse(attackInfo.range, out _))
+				{
+					Console.WriteLine($"[Error] CIRCLE 타입 잘못된 range 형식: {attackInfo.range} (AttackSerial: {attackSerial})");
+					return null;
+				}
 			}
 
-			// fixedCreatePos에 따른 공격 위치 결정
-			float finalCreatePosX, finalCreatePosY, finalCreatePosZ;
+			// 몬스터/오브젝트도 플레이어와 동일하게 AttackManager에서 실시간 계산하도록 함
+			// fixedCreatePos = TRUE인 경우 AttackManager에서 실시간으로 계산되도록 본인 위치만 전달
+			float finalCreatePosX = attacker.PosX;
+			float finalCreatePosY = attacker.PosY;
+			float finalCreatePosZ = attacker.PosZ;
 			
-			if (bool.Parse(attackInfo.fixedCreatePos))
-			{
-				// fixedCreatePos가 TRUE면 '본인 위치 + createPos 오프셋' 사용
-				var attackWorldPos = Extension.ComputeCreateWorldPos(attacker.PosX, attacker.PosY, attacker.PosZ, 
-					attacker.RotationY, attackInfo.createPos);
-				finalCreatePosX = attackWorldPos.X;
-				finalCreatePosY = attackWorldPos.Y;
-				finalCreatePosZ = attackWorldPos.Z;
-			}
-			else
-			{
-				// fixedCreatePos가 FALSE면 본인 위치만 사용 (몬스터/오브젝트는 보통 본인 위치에서 공격)
-				finalCreatePosX = attacker.PosX;
-				finalCreatePosY = attacker.PosY;
-				finalCreatePosZ = attacker.PosZ;
-			}
+			// Console.WriteLine($"[가상패킷] {attacker.SerialNumber}: AttackManager에서 실시간 createPos 계산 예정 (fixedCreatePos={attackInfo.fixedCreatePos})");
 			
 			return new C_EntityAttack {
 				createPosX   = finalCreatePosX,

@@ -67,8 +67,8 @@ public class PacketManager
 		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAttackAnimation, MakePacket<S_BroadcastEntityAttackAnimation>);
 		 _handler.Add((ushort)PacketID.S_BroadcastEntityAttackAnimation, PacketHandler.S_BroadcastEntityAttackAnimationHandler);
 
-		_makeFunc.Add((ushort)PacketID.S_BroadcastEntitySkillCreate, MakePacket<S_BroadcastEntitySkillCreate>);
-		 _handler.Add((ushort)PacketID.S_BroadcastEntitySkillCreate, PacketHandler.S_BroadcastEntitySkillCreateHandler);
+		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAttackEffectCreate, MakePacket<S_BroadcastEntityAttackEffectCreate>);
+		 _handler.Add((ushort)PacketID.S_BroadcastEntityAttackEffectCreate, PacketHandler.S_BroadcastEntityAttackEffectCreateHandler);
 
 		_makeFunc.Add((ushort)PacketID.S_BroadcastEntityAttackResult, MakePacket<S_BroadcastEntityAttackResult>);
 		 _handler.Add((ushort)PacketID.S_BroadcastEntityAttackResult, PacketHandler.S_BroadcastEntityAttackResultHandler);

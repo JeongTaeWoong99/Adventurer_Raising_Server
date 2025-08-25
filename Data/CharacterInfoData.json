@@ -1,19 +1,34 @@
 {
   "characterInfos": [
     {
-      "serialNumber": "O000",
+      "serialNumber": "O001",
       "level": "1",
-      "nickName": "Dummy",
+      "nickName": "Spike Trap",
       "needEXP": "0",
       "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "2000",
-      "body_Size": "0.5",
+      "invincibility": "TRUE",
+      "maxHp": "0",
+      "body_Size": "0",
       "moveSpeed": "0",
       "findRadius": "0",
-      "normalAttackDamage": "0",
-      "normalAttackRange": "0.0 / 0.0 / 0.0",
-      "hitLength": "0.5"
+      "normalAttackDamage": "100",
+      "normalAttackRange": "1.5 / 1.5 / 1.5",
+      "hitLength": "0"
+    },
+    {
+      "serialNumber": "P000",
+      "level": "1",
+      "nickName": "닉네임",
+      "needEXP": "50",
+      "dropExp": "0",
+      "invincibility": "FALSE",
+      "maxHp": "1000",
+      "body_Size": "0.3",
+      "moveSpeed": "5",
+      "findRadius": "0",
+      "normalAttackDamage": "50",
+      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0"
     },
     {
       "serialNumber": "P000",
@@ -29,6 +44,36 @@
       "normalAttackDamage": "125",
       "normalAttackRange": "1.0 / 1.0 / 1.0",
       "hitLength": "0"
+    },
+    {
+      "serialNumber": "M000",
+      "level": "1",
+      "nickName": "Knight",
+      "needEXP": "0",
+      "dropExp": "20",
+      "invincibility": "FALSE",
+      "maxHp": "300",
+      "body_Size": "0.3",
+      "moveSpeed": "5",
+      "findRadius": "12",
+      "normalAttackDamage": "50",
+      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0.378"
+    },
+    {
+      "serialNumber": "O000",
+      "level": "1",
+      "nickName": "Dummy",
+      "needEXP": "0",
+      "dropExp": "0",
+      "invincibility": "FALSE",
+      "maxHp": "2000",
+      "body_Size": "0.5",
+      "moveSpeed": "0",
+      "findRadius": "0",
+      "normalAttackDamage": "0",
+      "normalAttackRange": "0.0 / 0.0 / 0.0",
+      "hitLength": "0.5"
     },
     {
       "serialNumber": "P000",
@@ -61,49 +106,19 @@
       "hitLength": "0"
     },
     {
-      "serialNumber": "M000",
+      "serialNumber": "M001",
       "level": "1",
-      "nickName": "Knight",
+      "nickName": "Archer",
       "needEXP": "0",
-      "dropExp": "20",
+      "dropExp": "30",
       "invincibility": "FALSE",
-      "maxHp": "300",
+      "maxHp": "200",
       "body_Size": "0.3",
-      "moveSpeed": "5",
+      "moveSpeed": "4",
       "findRadius": "12",
-      "normalAttackDamage": "20",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "normalAttackDamage": "25",
+      "normalAttackRange": "6",
       "hitLength": "0.378"
-    },
-    {
-      "serialNumber": "O001",
-      "level": "1",
-      "nickName": "Spike Trap",
-      "needEXP": "0",
-      "dropExp": "0",
-      "invincibility": "TRUE",
-      "maxHp": "0",
-      "body_Size": "0",
-      "moveSpeed": "0",
-      "findRadius": "0",
-      "normalAttackDamage": "100",
-      "normalAttackRange": "1.5 / 1.5 / 1.5",
-      "hitLength": "0"
-    },
-    {
-      "serialNumber": "P000",
-      "level": "1",
-      "nickName": "닉네임",
-      "needEXP": "50",
-      "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "1000",
-      "body_Size": "0.3",
-      "moveSpeed": "5",
-      "findRadius": "0",
-      "normalAttackDamage": "50",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
-      "hitLength": "0"
     }
   ]
 }

@@ -205,12 +205,12 @@
     </packet>
 
     <!-- 공격이 공격 이펙트를 생성해야 하는 경우, 브로드캐스트 -->
-    <packet name = "S_BroadcastEntitySkillCreate">
+    <packet name = "S_BroadcastEntityAttackEffectCreate">
         <int    name = "ID"/>
         <int    name = "entityType"/>
-        <string name = "skillCreatePos"/>
-        <float  name = "moveSpeed"/>
         <string name = "attackEffectSerial"/>
+        <string name = "attackEffectCreatePos"/>
+        <float  name = "moveSpeed"/>
         <float  name = "duration"/>
         <string name = "type"/>
     </packet>
