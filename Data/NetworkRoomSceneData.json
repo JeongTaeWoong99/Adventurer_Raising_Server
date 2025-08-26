@@ -1,10 +1,16 @@
 {
   "networkRoomSceneInfos": [
     {
-      "mmNumber": "N00",
-      "type": "LoginToSave",
-      "toScene": "SavedScene",
-      "spawnPosition": "SavedPosition"
+      "mmNumber": "N04",
+      "type": "Portal",
+      "toScene": "Stage1",
+      "spawnPosition": "0 / 0 / 10"
+    },
+    {
+      "mmNumber": "N05",
+      "type": "Portal",
+      "toScene": "Stage2",
+      "spawnPosition": "-4 / 0 / 123"
     },
     {
       "mmNumber": "N02",
@@ -13,9 +19,9 @@
       "spawnPosition": "0 / 0 / -26"
     },
     {
-      "mmNumber": "N05",
+      "mmNumber": "N03",
       "type": "Portal",
-      "toScene": "Stage2",
+      "toScene": "Stage1",
       "spawnPosition": "-4 / 0 / 123"
     },
     {
@@ -25,16 +31,10 @@
       "spawnPosition": "0 / 0 / 0"
     },
     {
-      "mmNumber": "N04",
-      "type": "Portal",
-      "toScene": "Stage1",
-      "spawnPosition": "0 / 0 / 10"
-    },
-    {
-      "mmNumber": "N03",
-      "type": "Portal",
-      "toScene": "Stage1",
-      "spawnPosition": "-4 / 0 / 123"
+      "mmNumber": "N00",
+      "type": "LoginToSave",
+      "toScene": "SavedScene",
+      "spawnPosition": "SavedPosition"
     }
   ]
 }

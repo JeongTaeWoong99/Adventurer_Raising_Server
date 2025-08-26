@@ -207,7 +207,7 @@ namespace Server
             monster.PosX = newPosX;
             monster.PosZ = newPosZ;
 
-            // 방향에 따른 회전 각도 계산
+            // 방향에 따른 회전 각도 계산 - AttackManager와 일치하도록 수정
             float angleRad = (float)Math.Atan2(animState.MoveDirectionX, animState.MoveDirectionZ);
             float angleDeg = angleRad * 180.0f / (float)Math.PI;
             monster.RotationY = angleDeg;
@@ -278,8 +278,8 @@ namespace Server
                         dirZ /= magnitude;
                     }
 
-                    // 각도 계산 (라디안 -> 도)
-                    float angleRad = (float)Math.Atan2(dirZ, dirX);
+                    // 각도 계산 (라디안 -> 도) - AttackManager와 일치하도록 수정
+                    float angleRad = (float)Math.Atan2(dirX, dirZ);
                     float angleDeg = angleRad * (180.0f / (float)Math.PI);
 
                     //Console.WriteLine($"[몬스터 탐지] {monster.SerialNumber}({monster.SessionId}) -> 플레이어({targetPlayer.SessionId}) " + $"거리: {closestDistance:F2}m, 방향: ({dirX:F3}, {dirZ:F3}), 각도: {angleDeg:F1}도");
@@ -655,7 +655,7 @@ namespace Server
         }              
         
         #endregion
-         
+        
         #region Public 메서드들 - 외부에서 호출되는 인터페이스
 
         /// <summary>

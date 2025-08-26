@@ -84,9 +84,9 @@ namespace Server
             BroadcastSkillCreate(attacker, packet, attackInfo);
 
             // Move 스킬 실시간 처리
-            float duration = float.Parse(attackInfo.duration);
-            float moveSpeed = float.Parse(attackInfo.moveSpeed);
-            bool penetration = bool.Parse(attackInfo.penetration);
+            float duration    = float.Parse(attackInfo.duration);
+            float moveSpeed   = float.Parse(attackInfo.moveSpeed);
+            bool  penetration = bool.Parse(attackInfo.penetration);
             
             // 이동 거리 계산
             float totalDistance = moveSpeed * duration;

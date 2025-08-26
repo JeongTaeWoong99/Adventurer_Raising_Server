@@ -1,6 +1,21 @@
 {
   "characterInfos": [
     {
+      "serialNumber": "P000",
+      "level": "2",
+      "nickName": "닉네임",
+      "needEXP": "100",
+      "dropExp": "0",
+      "invincibility": "FALSE",
+      "maxHp": "1500",
+      "body_Size": "0.3",
+      "moveSpeed": "5.25",
+      "findRadius": "0",
+      "normalAttackDamage": "75",
+      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0"
+    },
+    {
       "serialNumber": "O001",
       "level": "1",
       "nickName": "Spike Trap",
@@ -31,21 +46,6 @@
       "hitLength": "0"
     },
     {
-      "serialNumber": "P000",
-      "level": "4",
-      "nickName": "닉네임",
-      "needEXP": "0",
-      "dropExp": "0",
-      "invincibility": "FALSE",
-      "maxHp": "2500",
-      "body_Size": "0.3",
-      "moveSpeed": "5.75",
-      "findRadius": "0",
-      "normalAttackDamage": "125",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
-      "hitLength": "0"
-    },
-    {
       "serialNumber": "M000",
       "level": "1",
       "nickName": "Knight",
@@ -57,7 +57,7 @@
       "moveSpeed": "5",
       "findRadius": "12",
       "normalAttackDamage": "50",
-      "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "normalAttackRange": "0.75 / 0.75 / 0.75",
       "hitLength": "0.378"
     },
     {
@@ -77,16 +77,16 @@
     },
     {
       "serialNumber": "P000",
-      "level": "2",
+      "level": "4",
       "nickName": "닉네임",
-      "needEXP": "100",
+      "needEXP": "0",
       "dropExp": "0",
       "invincibility": "FALSE",
-      "maxHp": "1500",
+      "maxHp": "2500",
       "body_Size": "0.3",
-      "moveSpeed": "5.25",
+      "moveSpeed": "5.75",
       "findRadius": "0",
-      "normalAttackDamage": "75",
+      "normalAttackDamage": "125",
       "normalAttackRange": "1.0 / 1.0 / 1.0",
       "hitLength": "0"
     },
@@ -103,6 +103,21 @@
       "findRadius": "0",
       "normalAttackDamage": "100",
       "normalAttackRange": "1.0 / 1.0 / 1.0",
+      "hitLength": "0"
+    },
+    {
+      "serialNumber": "M002",
+      "level": "1",
+      "nickName": "Golem",
+      "needEXP": "0",
+      "dropExp": "100",
+      "invincibility": "FALSE",
+      "maxHp": "2000",
+      "body_Size": "0.6",
+      "moveSpeed": "3",
+      "findRadius": "12",
+      "normalAttackDamage": "100",
+      "normalAttackRange": "3 / 3 / 3",
       "hitLength": "0"
     },
     {

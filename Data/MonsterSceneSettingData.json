@@ -1,6 +1,14 @@
 {
   "monsterSceneSettingInfos": [
     {
+      "mmNumber": "M00",
+      "sceneName": "Stage1",
+      "serialNumber": "M000",
+      "spawnNumber": "3",
+      "makePos": "-19 / 0.0 / 40.0",
+      "makeRadius": "5"
+    },
+    {
       "mmNumber": "M02",
       "sceneName": "Stage1",
       "serialNumber": "M000",
@@ -9,11 +17,11 @@
       "makeRadius": "5"
     },
     {
-      "mmNumber": "M04",
-      "sceneName": "Village",
+      "mmNumber": "M03",
+      "sceneName": "Stage1",
       "serialNumber": "M001",
-      "spawnNumber": "1",
-      "makePos": "0 / 0 / 0",
+      "spawnNumber": "3",
+      "makePos": "19 / 0.0 / 91.0",
       "makeRadius": "5"
     },
     {
@@ -25,20 +33,12 @@
       "makeRadius": "5"
     },
     {
-      "mmNumber": "M00",
-      "sceneName": "Stage1",
-      "serialNumber": "M000",
-      "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 40.0",
-      "makeRadius": "5"
-    },
-    {
-      "mmNumber": "M03",
-      "sceneName": "Stage1",
-      "serialNumber": "M001",
-      "spawnNumber": "3",
-      "makePos": "19 / 0.0 / 91.0",
-      "makeRadius": "5"
+      "mmNumber": "M04",
+      "sceneName": "Village",
+      "serialNumber": "M002",
+      "spawnNumber": "1",
+      "makePos": "0.0 / 0.0 / 0.0",
+      "makeRadius": "1"
     }
   ]
 }

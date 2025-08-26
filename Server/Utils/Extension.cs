@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Numerics;
+using Server;
 
 // 편리하게 사용하기 위한, 메서드들 미리 만들어 두고 사용
 public static class Extension
@@ -36,12 +37,12 @@ public static class Extension
 		float cos = (float)Math.Cos(radians);
 		float sin = (float)Math.Sin(radians);
 		
-		// Unity 좌표계: 로컬 좌표를 월드 좌표로 변환
-		// Forward(Z) 방향: cos*Z - sin*X
-		// Right(X) 방향: sin*Z + cos*X  
-		float worldX = casterX + (relativePos.X * cos + relativePos.Z * sin);  // 오른쪽 + 앞방향*sin
-		float worldY = casterY + relativePos.Y;                               // Y축은 그대로 (상하)
-		float worldZ = casterZ + (-relativePos.X * sin + relativePos.Z * cos); // 앞방향 - 오른쪽*sin
+		float worldX, worldZ;
+		float worldY = casterY + relativePos.Y; // Y축은 항상 동일 (상하)
+		
+		// 통일된 좌표계 적용 (ScheduleManager 각도 계산 수정으로 해결)
+		worldX = casterX + (relativePos.X * cos + relativePos.Z * sin);
+		worldZ = casterZ + (-relativePos.X * sin + relativePos.Z * cos);
 		
 		return new Vector3(worldX, worldY, worldZ);
 	}
