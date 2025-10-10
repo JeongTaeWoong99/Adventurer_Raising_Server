@@ -1,7 +1,3 @@
-# 🎮 Adventurer Raising Server
-
-Unity 3D RPG 게임을 위한 C# 멀티플레이어 게임 서버입니다.
-
 ## 📋 목차
 - [개요](#-개요)
 - [주요 기능](#-주요-기능)
