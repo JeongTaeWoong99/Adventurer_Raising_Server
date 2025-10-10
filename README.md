@@ -2,9 +2,11 @@
 - [개요](#-개요)
 - [주요 기능](#-주요-기능)
 - [프로젝트 구조](#-프로젝트-구조)
+- [관련 링크](#-관련-링크)
 - [기술 스택](#-기술-스택)
 - [시작하기](#-시작하기)
 - [아키텍처](#-아키텍처)
+- [성능 특성](#-성능-특성)
 
 ## 📖 개요
 
@@ -89,6 +91,12 @@
     └── NetworkRoomSceneData.json
 ```
 
+## 🔗 관련 링크
+
+| 항목 | 링크                                                                   |
+|------|----------------------------------------------------------------------|
+| 클라 GitHub | [바로가기](https://github.com/JeongTaeWoong99/Adventurer_Raising_Client) |
+
 ## 🛠 기술 스택
 
 - **언어** : C# (.NET 9.0)
@@ -157,21 +165,11 @@ ClientSession / MonsterSession / ObjectSession
 
 **ServerCore/Listener.cs:8-97** - 클라이언트 Accept 처리
 
-## 📊 성능 특징
+## 🚀 성능 특성
 
 - **서버 틱레이트** : 40FPS (25ms 간격)
 - **동시 접속** : 룸별 독립적인 JobQueue로 확장 가능
 - **패킷 처리** : 비동기 소켓 + 단일 스레드 큐로 안정성 확보
 - **버퍼 관리** : RecvBuffer 64KB, SendBuffer 동적 할당
-
-## 🔗 관련 프로젝트
-
-- [Unity 클라이언트](https://github.com/JeongTaeWoong99/Adventurer_Raising_Client) - 3D RPG 게임 클라이언트
-
-## 📝 라이선스
-
-이 프로젝트는 개인 학습 목적으로 제작되었습니다.
-
----
 
 **개발자**: [@JeongTaeWoong99](https://github.com/JeongTaeWoong99)
