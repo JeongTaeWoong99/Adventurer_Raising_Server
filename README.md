@@ -171,5 +171,3 @@ ClientSession / MonsterSession / ObjectSession
 - **동시 접속** : 룸별 독립적인 JobQueue로 확장 가능
 - **패킷 처리** : 비동기 소켓 + 단일 스레드 큐로 안정성 확보
 - **버퍼 관리** : RecvBuffer 64KB, SendBuffer 동적 할당
-
-**개발자**: [@JeongTaeWoong99](https://github.com/JeongTaeWoong99)
