@@ -12,4 +12,4 @@ XCOPY /Y "GenPackets.cs"          "..\..\..\3D_RPG(Git)\Assets\Scripts\Server\Pa
 XCOPY /Y "ClientPacketManager.cs" "..\..\..\3D_RPG(Git)\Assets\Scripts\Server\Packet\"
 
 echo [INFO] Bat 완료
-pause 
+pause

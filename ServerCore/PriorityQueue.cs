@@ -28,7 +28,7 @@ namespace ServerCore
 				int next = (now - 1) / 2;
 				if (_heap[now].CompareTo(_heap[next]) < 0)
 					break; // 실패
-
+				
 				// 두 값을 교체한다
 				(_heap[now], _heap[next]) = (_heap[next], _heap[now]);
 

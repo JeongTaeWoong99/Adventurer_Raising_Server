@@ -104,10 +104,20 @@ namespace ServerCore
 			if (Interlocked.Exchange(ref _disconnected, 1) == 1)
 				return;
 
-			OnDisconnected(_socket.RemoteEndPoint);
-			_socket.Shutdown(SocketShutdown.Both);
-			_socket.Close();
-			Clear();
+			try
+			{
+				OnDisconnected(_socket.RemoteEndPoint);
+				_socket.Shutdown(SocketShutdown.Both);
+				_socket.Close();
+			}
+			catch (Exception)
+			{
+				// 연결 해제 중 예외 발생 시 무시
+			}
+			finally
+			{
+				Clear();
+			}
 		}
 		
 		#region Send구역(모아보내기)
@@ -116,7 +126,7 @@ namespace ServerCore
 		{
 			if (sendBuffList.Count == 0)
 				return;
-
+			
 			lock (_lock)
 			{
 				foreach (ArraySegment<byte> sendBuff in sendBuffList)
@@ -172,7 +182,7 @@ namespace ServerCore
 				Console.WriteLine($"RegisterSend Failed {e}");
 			}
 		}
-
+		
 		void OnSendCompleted(object sender, SocketAsyncEventArgs args)
 		{
 			lock (_lock)
@@ -212,10 +222,6 @@ namespace ServerCore
 			}
 		}		
 		#endregion
-		
-		/// <summary>
-		/// /////////
-		/// </summary>
 
 		#region Recv구역(무한 루프)
 		void RegisterRecv()
@@ -285,6 +291,7 @@ namespace ServerCore
 				Disconnect();
 			}
 		}
+		
 		#endregion
 	}
 }

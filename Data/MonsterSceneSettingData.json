@@ -1,44 +1,60 @@
 {
   "monsterSceneSettingInfos": [
     {
+      "mmNumber": "M04",
+      "sceneName": "Stage2",
+      "serialNumber": "M000",
+      "spawnNumber": "2",
+      "makePos": "0.0 / 0.0 / 78",
+      "makeRadius": "10"
+    },
+    {
+      "mmNumber": "M05",
+      "sceneName": "Stage2",
+      "serialNumber": "M001",
+      "spawnNumber": "2",
+      "makePos": "0.0 / 0.0 / 78",
+      "makeRadius": "10"
+    },
+    {
+      "mmNumber": "M06",
+      "sceneName": "Stage2",
+      "serialNumber": "M002",
+      "spawnNumber": "1",
+      "makePos": "0.0 / 0.0 / 78",
+      "makeRadius": "1"
+    },
+    {
+      "mmNumber": "M01",
+      "sceneName": "Stage1",
+      "serialNumber": "M001",
+      "spawnNumber": "2",
+      "makePos": "22 / 0.0 / 97",
+      "makeRadius": "10"
+    },
+    {
+      "mmNumber": "M03",
+      "sceneName": "Stage1",
+      "serialNumber": "M001",
+      "spawnNumber": "2",
+      "makePos": "-22 / 0.0 / 97",
+      "makeRadius": "10"
+    },
+    {
       "mmNumber": "M00",
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 40.0",
-      "makeRadius": "5"
+      "makePos": "22 / 0.0 / 97",
+      "makeRadius": "10"
     },
     {
       "mmNumber": "M02",
       "sceneName": "Stage1",
       "serialNumber": "M000",
       "spawnNumber": "3",
-      "makePos": "-19 / 0.0 / 91.0",
-      "makeRadius": "5"
-    },
-    {
-      "mmNumber": "M03",
-      "sceneName": "Stage1",
-      "serialNumber": "M001",
-      "spawnNumber": "3",
-      "makePos": "19 / 0.0 / 91.0",
-      "makeRadius": "5"
-    },
-    {
-      "mmNumber": "M01",
-      "sceneName": "Stage1",
-      "serialNumber": "M001",
-      "spawnNumber": "3",
-      "makePos": "19 / 0.0 / 40.0",
-      "makeRadius": "5"
-    },
-    {
-      "mmNumber": "M04",
-      "sceneName": "Village",
-      "serialNumber": "M002",
-      "spawnNumber": "1",
-      "makePos": "0.0 / 0.0 / 0.0",
-      "makeRadius": "1"
+      "makePos": "-22 / 0.0 / 97",
+      "makeRadius": "10"
     }
   ]
 }

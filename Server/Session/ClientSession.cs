@@ -13,8 +13,12 @@ namespace Server
 	{
 		public override int EntityType { get; } = (int)Define.Layer.Player;
 		
+		// 연결 시간 추적
+		private DateTime _connectionTime;
+		
 		public override void OnConnected(EndPoint endPoint)
 		{
+			_connectionTime = DateTime.Now;
 			Console.WriteLine("연결됨 : " + SessionId + ". 세션이 만들어지고, 방에는 들어가지 않은 상태.");
 		}
 		

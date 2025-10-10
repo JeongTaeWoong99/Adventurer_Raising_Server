@@ -25,12 +25,11 @@ namespace Server
 			
 			// 다운로드된 데이터를 기반으로, 모든 씬의 초기 몬스터 및 오브젝트 스폰 세팅 진행
 			SpawnManager.Instance.DefaultSceneEntitySetting();
-		
+			
 			// 서버 작업 진행
-			string      host     = Dns.GetHostName();   		  // DNS (Domain Name System)
-			IPHostEntry ipHost   = await Dns.GetHostEntryAsync(host);
-			IPAddress   ipAddr   = ipHost.AddressList[0];
-			IPEndPoint  endPoint = new IPEndPoint(ipAddr, 7777);
+			// 모든 네트워크 인터페이스에서 연결을 받을 수 있도록 IPAddress.Any 사용
+			IPAddress  ipAddr   = IPAddress.Any; // 0.0.0.0 - 모든 IP에서 접속 허용
+			IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
 			
 			// 서버는 문지기가 필요.....
 			// 클라가 서버에 접속을 성공하면, 서버에서 클라를 관리해줄 ClientSession을 만들어주는

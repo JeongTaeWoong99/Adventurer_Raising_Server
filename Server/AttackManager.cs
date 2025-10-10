@@ -91,22 +91,13 @@ namespace Server
             // 이동 거리 계산
             float totalDistance = moveSpeed * duration;
             
-            // 이동 방향 계산 (플레이어와 몬스터 좌표계 차이 고려)
+            // 이동 방향 계산 (Extension.ComputeCreateWorldPos와 일치하도록 통일)
             double radians = attacker.RotationY * Math.PI / 180.0;
             float dirX, dirZ;
             
-            if (attacker.EntityType == (int)Define.Layer.Player)
-            {
-                // 플레이어: 클라이언트 좌표계 방식
-                dirX = (float)Math.Sin(radians);
-                dirZ = (float)Math.Cos(radians);
-            }
-            else
-            {
-                // 몬스터/오브젝트: 서버 좌표계 방식
-                dirX = (float)Math.Cos(radians);
-                dirZ = (float)Math.Sin(radians);
-            }
+            // 모든 엔티티에 대해 통일된 좌표계 사용
+            dirX = (float)Math.Sin(radians);
+            dirZ = (float)Math.Cos(radians);
             
             Console.WriteLine($"[Move공격] 캐스터 로테이션: {attacker.RotationY:F3}도");
             Console.WriteLine($"[Move공격] 이동 방향: dirX={dirX:F3}, dirZ={dirZ:F3} ({(attacker.EntityType == (int)Define.Layer.Player ? "플레이어" : "몬스터")} 좌표계)");
@@ -279,7 +270,7 @@ namespace Server
         }
 
         #endregion
-
+        
         #region 공격 스케줄링
 
         /// <summary>
@@ -565,10 +556,14 @@ namespace Server
             
             if (target.CurrentHP > 0)
             {
-                target.AnimationId = (int)Define.Anime.Hit;
-                ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
-                if (target.AnimationId == (int)Define.Anime.Run) 
-                    ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
+                // hitLength가 0이면 Hit 애니메이션으로 변경하지 않음 (데미지만 적용)
+                if (target.hitLength > 0)
+                {
+                    target.AnimationId = (int)Define.Anime.Hit;
+                    ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
+                    if (target.AnimationId == (int)Define.Anime.Run) 
+                        ScheduleManager.Instance.ProcessHitDuringRun(target.SessionId);
+                }
                 StartHitKnockBack(target, attackCenterX, attackCenterZ);
             }
             else
@@ -685,8 +680,12 @@ namespace Server
                 }
                 else
                 {
-                    target.AnimationId = (int)Define.Anime.Hit;
-                    ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
+                    // hitLength가 0이면 Hit 애니메이션으로 변경하지 않음 (데미지만 적용)
+                    if (target.hitLength > 0)
+                    {
+                        target.AnimationId = (int)Define.Anime.Hit;
+                        ScheduleManager.Instance.SetAnimationState(target, Define.Anime.Hit);
+                    }
                 }
                 
                 _gameRoom.EntityInfoChange(target);

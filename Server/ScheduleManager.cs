@@ -42,7 +42,7 @@ namespace Server
         public float MoveDirectionZ { get; set; }
         public bool HasMoveDirection { get; set; }
     }
-
+    
     /// <summary>
     /// 시간 기반 작업 스케줄링 관리 매니저
     /// - GameRoom의 시간 관련 작업을 분리하여 단일 책임 원칙 적용

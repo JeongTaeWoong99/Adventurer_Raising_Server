@@ -41,7 +41,6 @@ namespace PacketGenerator
 					// 패킷 깊이 1    && 패킷의 정보가 시작하는 부분
 					if (r.Depth == 1 && r.NodeType == XmlNodeType.Element)
 						ParsePacket(r);
-					//Console.WriteLine(r.Name + " " + r["name"]);
 				}
 				
 				// 자동 파싱되어 만들어진 패킷들 스크립트 덮어 씌우기

@@ -17,6 +17,11 @@ namespace Server
 		int _sessionId = 0;																 // 고유한 세션 아이디
 		Dictionary<int, CommonSession> _sessions = new Dictionary<int, CommonSession>(); // 모든 세션(클라/오브젝트/몬스터)
 		
+		// 연결 통계
+		DateTime _lastConnectionTime = DateTime.MinValue;
+		int _recentConnectionCount = 0;
+		const int MAX_CONNECTIONS_PER_SECOND = 10; // 초당 최대 연결 수
+		
 		// 새로 서버에 접속한 클라이언트를 관리해줄, ClientSession(대리자)를 만들어주는 메서드.
 		// Session 생성 및 ID 발급
 		// _lock통해, 고유한 세션이 만들어짐. =>  ClientSession을 리턴함.
@@ -27,7 +32,6 @@ namespace Server
 			{
 				int sessionId = ++_sessionId;
 				
-
 				ClientSession session = new ClientSession();
 				session.SessionId = sessionId;
 				_sessions.Add(sessionId, session);

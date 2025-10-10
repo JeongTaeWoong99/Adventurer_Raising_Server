@@ -17,9 +17,13 @@ namespace DummyClient
 			IPAddress   ipAddr   = ipHost.AddressList[0];
 			IPEndPoint  endPoint = new IPEndPoint(ipAddr, 7777);
 			
-			// 스트레스 테스트를 위해, 500개 생성
+			// 테스트용 더미 클라이언트 생성 (개수 대폭 줄임)
+			Console.WriteLine("🤖 DummyClient 시작 - 서버에 연결 중...");
+			Console.WriteLine($"📍 연결 대상: {endPoint}");
+			Console.WriteLine("⚠️  DummyClient는 테스트 목적으로만 사용하세요!");
+			
 			Connector connector = new Connector();
-			connector.Connect(endPoint, () => { return DummyClientSessionManager.Instance.Generate(); }, 100);
+			connector.Connect(endPoint, () => { return DummyClientSessionManager.Instance.Generate(); }, 1); // 1개로 줄임
 
 			while (true)
 			{
