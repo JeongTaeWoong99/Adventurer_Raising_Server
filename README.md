@@ -95,7 +95,7 @@
 
 | 항목 | 링크                                                                   |
 |------|----------------------------------------------------------------------|
-| 클라 GitHub | [바로가기](https://github.com/JeongTaeWoong99/Adventurer_Raising_Client) |
+| 클라 GitHub | [바로가기](https://github.com/JeongTaeWoong99/Adventurer_Raising) |
 
 ## 🛠 기술 스택
 
