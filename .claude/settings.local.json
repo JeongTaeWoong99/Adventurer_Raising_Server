@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Read(//c/Users/ASUS/Desktop/**)",
+      "Bash(findstr:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []
