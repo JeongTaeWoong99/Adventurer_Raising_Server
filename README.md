@@ -29,18 +29,6 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 <table>
   <tr>
     <td align="center">
-      <img width="640" height="360" alt="로그인 화면" src="https://github.com/user-attachments/assets/eae1f5d1-66f9-45ab-9c95-a243a4f3d9ee" />
-      <br/>
-      <b>클라이언트 로그인 화면</b>
-    </td>
-    <td align="center">
-      <img width="640" height="360" alt="인게임 전투 화면" src="https://github.com/user-attachments/assets/f667d625-3be4-4b9f-8a9b-3d58ff999d94" />
-      <br/>
-      <b>클라이언트 인게임 전투 화면</b>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
       <img width="640" height="360" alt="C# 데디케이트 서버" src="https://github.com/user-attachments/assets/77bc055d-b986-42cb-89b3-5b50de9f131a" />
       <br/>
       <b>C# 데디케이트 서버</b>
@@ -259,6 +247,8 @@ private void OnTimerElapsed(object sender, ElapsedEventArgs e)
 }
 ```
 
+---
+
 #### 2️⃣ **PacketGenerator - 자동화된 네트워크 프로토콜**
 
 **기존 문제점** : 수작업 패킷 코딩 시 클라이언트-서버 불일치, 반복 작업, 휴먼 에러
@@ -299,7 +289,48 @@ using (XmlReader r = XmlReader.Create(pdlPath, settings))
 - 패킷 ID 충돌 방지 (자동 증가)
 - 개발 시간 대폭 단축
 
-#### 3️⃣ **JobQueue - 단일 스레드 동기화**
+---
+
+#### 3️⃣ **Google API 기반 데이터 자동화 시스템**
+
+**기존 문제점** : 레벨별 MAX HP, 스킬 데미지, 스킬 이름 등 게임 데이터를 클라이언트(UI 표시)와 서버(중앙 판단) 양쪽에서 사용해야 하는데, 데이터 수정 시마다 클라이언트와 서버에 각각 수동 복사하는 반복 작업이 발생했고, 데이터 불일치 및 휴먼 에러 위험이 있었습니다.
+
+**해결 방안** :
+- **Google Spreadsheet 데이터 작업** : 시트에서 캐릭터 스탯(레벨별 HP, 공격력), 스킬 정보(이름, 데미지, 쿨타임), 몬스터 스폰 설정 등을 작업
+- **Google Apps Script 자동 업로드** : 시트 작업 완료 후 버튼 클릭 시 Apps Script가 Firebase Firestore에 JSON 형식으로 자동 업로드
+- **실행 시 자동 다운로드** : 클라이언트/서버 실행 시 Firebase에서 최신 데이터를 자동 다운로드하여 Dictionary 캐싱 후 게임 시작
+
+**데이터 구조** :
+```csharp
+// Server/DB/FirestoreManager.cs - 게임 데이터 딕셔너리
+Dictionary<int, CharacterInfoData> characterInfoDic;      // 레벨별 캐릭터 스탯
+Dictionary<int, AttackInfoData> attackInfoDic;            // 스킬/공격 정보
+Dictionary<int, MonsterSceneSettingData> monsterSpawnDic; // 몬스터 스폰 설정
+Dictionary<int, ObjectSceneSettingData> objectSpawnDic;   // 오브젝트 스폰 설정
+Dictionary<string, NetworkRoomSceneData> networkRoomDic;  // 씬별 스폰 위치
+```
+
+**Server/Program.cs:41-50** - 서버 시작 시 자동 다운로드
+```csharp
+// Firebase에서 게임 데이터 다운로드
+await DBManager._firestore.DownloadCharacterInfoDataAsync();
+await DBManager._firestore.DownloadAttackInfoDataAsync();
+await DBManager._firestore.DownloadMonsterSceneSettingDataAsync();
+await DBManager._firestore.DownloadObjectSceneSettingDataAsync();
+await DBManager._firestore.DownloadNetworkRoomSceneDataAsync();
+
+// 다운로드된 데이터를 딕셔너리로 변환하여 캐싱
+DBManager._firestore.InitializeDictionaries();
+```
+
+**효과** :
+- 단일 시트 수정만으로 클라이언트/서버 동시 최신화되어 수동 복사 작업과 데이터 불일치를 완전히 제거
+- 시트에서 직접 데이터 수정 가능하여 반복 작업 시간을 대폭 단축
+- Firebase 중앙 관리로 데이터 버전 충돌과 휴먼 에러를 방지
+
+---
+
+#### 4️⃣ **JobQueue - 단일 스레드 동기화**
 
 **설계 목적** : 멀티스레드 환경에서 데이터 레이스 없이 안전한 게임 로직 처리
 
@@ -332,7 +363,9 @@ public void Move(ClientSession session, C_EntityMove movePacket)
 }
 ```
 
-#### 4️⃣ **Session 계층 구조**
+---
+
+#### 5️⃣ **Session 계층 구조**
 
 엔티티 타입별 공통 기능과 특화 기능 분리 :
 
@@ -351,7 +384,9 @@ CommonSession
 **ServerCore/Session.cs:69-297** - 비동기 소켓 통신 베이스
 **Server/Session/ClientSession.cs:12-76** - 플레이어 세션 구현
 
-#### 5️⃣ **비동기 소켓 통신**
+---
+
+#### 6️⃣ **비동기 소켓 통신**
 
 고성능 네트워크 I/O를 위한 최적화 :
 
@@ -361,6 +396,8 @@ CommonSession
 - **모아보내기** : 25ms 윈도우에서 여러 패킷 배치 전송 (syscall 감소)
 
 **ServerCore/Listener.cs:8-97** - 클라이언트 Accept 처리
+
+---
 
 ### 보조 시스템
 
