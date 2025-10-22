@@ -1,13 +1,14 @@
-# 3D RPG Server
+# 모험가 키우기 - 서버 리포지토리
 
-## 📋 목차
-- [개요](#-개요)
-- [관련 링크](#-관련-링크)
-- [주요 기능](#-주요-기능)
-- [프로젝트 구조](#-프로젝트-구조)
-- [기술 스택](#-기술-스택)
-- [아키텍처](#-아키텍처)
-- [성능 특성](#-성능-특성)
+## 📑 목차
+- [📋 개요](#-개요)
+- [🎬 인게임 사진](#-인게임-사진)
+- [🔗 관련 링크](#-관련-링크)
+- [✨ 주요 기능](#-주요-기능)
+- [📂 프로젝트 구조](#-프로젝트-구조)
+- [🛠 기술 스택](#-기술-스택)
+- [🏗 아키텍처](#-아키텍처)
+- [📊 성능 특성](#-성능-특성)
 
 ## 📖 개요
 
@@ -22,6 +23,35 @@
 Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 
 비동기 TCP 소켓 통신, XML 기반 패킷 자동 생성, Firebase 연동을 통해 실시간 멀티플레이어 3D RPG 게임을 지원합니다.
+
+## 🎬 인게임 사진
+
+<table>
+  <tr>
+    <td align="center">
+      <img width="640" height="360" alt="로그인 화면" src="https://github.com/user-attachments/assets/eae1f5d1-66f9-45ab-9c95-a243a4f3d9ee" />
+      <br/>
+      <b>클라이언트 로그인 화면</b>
+    </td>
+    <td align="center">
+      <img width="640" height="360" alt="인게임 전투 화면" src="https://github.com/user-attachments/assets/f667d625-3be4-4b9f-8a9b-3d58ff999d94" />
+      <br/>
+      <b>클라이언트 인게임 전투 화면</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img width="640" height="360" alt="C# 데디케이트 서버" src="https://github.com/user-attachments/assets/77bc055d-b986-42cb-89b3-5b50de9f131a" />
+      <br/>
+      <b>C# 데디케이트 서버</b>
+    </td>
+    <td align="center">
+      <img width="640" height="360" alt="FIREBASE DB" src="https://github.com/user-attachments/assets/b238cf89-7f3f-4615-bd19-860c3556ad9e" />
+      <br/>
+      <b>FIREBASE DB</b>
+    </td>
+  </tr>
+</table>
 
 ## 🔗 관련 링크
 
