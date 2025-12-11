@@ -5,6 +5,7 @@
 - [🎬 인게임 사진](#-인게임-사진)
 - [🔗 관련 링크](#-관련-링크)
 - [✨ 주요 기능](#-주요-기능)
+- [🔨 개발 이력](#-개발-이력)
 - [📂 프로젝트 구조](#-프로젝트-구조)
 - [🛠 기술 스택](#-기술-스택)
 - [🏗 아키텍처](#-아키텍처)
@@ -19,10 +20,18 @@
 | **역할** | 클라이언트, 서버, DB |
 | **도구** | UNITY, C#, TCP SOCKET, FIREBASE |
 | **타겟 기기** | PC |
+| **참고 강의** | [C#과 유니티로 만드는 MMORPG 게임 개발 시리즈 Part4: 게임 서버](https://www.inflearn.com/course/%EC%9C%A0%EB%8B%88%ED%8B%B0-mmorpg-%EA%B0%9C%EB%B0%9C-part4) |
 
 Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 
 비동기 TCP 소켓 통신, XML 기반 패킷 자동 생성, Firebase 연동을 통해 실시간 멀티플레이어 3D RPG 게임을 지원합니다.
+
+### 개발 배경
+참고 강의를 통해 **서버 프로그래밍 이론**과 **기본 프레임워크**(네트워크 코어, 패킷 자동 생성 시스템)를 학습했습니다. 
+
+이후 Unity 클라이언트와 연동하면서 게임 컨텐츠가 확장됨에 따라, Session 구조 재설계, DB 시스템 구축, 게임 Manager 개발 등 **서버 기능을 직접 확장 및 추가**했습니다.
+
+
 
 ## 🎬 인게임 사진
 
@@ -107,6 +116,139 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 - **씬 전환** : 포털/스폰 포인트 기반 씬 이동
 - **사망 처리** : Village 씬으로 리스폰, HP 전체 회복
 - **데이터 영속성** : 접속 종료 시 Realtime DB에 자동 저장
+
+## 🔨 개발 이력
+
+이 프로젝트는 강의를 통해 기본 프레임워크를 학습한 후, Unity 클라이언트 컨텐츠 확장에 맞춰 서버 기능을 점진적으로 확장했습니다.
+
+### 📚 강의 기반 구현 (학습)
+
+참고 강의를 통해 다음 핵심 기술을 학습하고 구현했습니다:
+
+#### ServerCore (네트워크 코어 라이브러리)
+- **비동기 TCP 소켓 통신** : `SocketAsyncEventArgs` 기반 고성능 I/O
+- **Listener, Session, PacketSession** : 클라이언트 연결 관리 및 패킷 처리 기반 구조
+- **RecvBuffer / SendBuffer** : 링 버퍼 기반 패킷 송수신
+- **JobQueue** : 단일 스레드 작업 큐로 멀티스레드 동기화
+- **PriorityQueue** : 우선순위 기반 작업 관리
+
+#### PacketGenerator (패킷 자동 생성 시스템)
+- **XML 기반 패킷 정의** : PDL.xml에서 선언적 패킷 구조 정의
+- **코드 자동 생성** : 패킷 클래스, 직렬화/역직렬화, PacketManager 자동 생성
+- **클라이언트-서버 동기화** : 단일 XML에서 양쪽 코드 생성으로 불일치 방지
+
+#### 기본 서버 구조
+- **GameRoom** : JobQueue 기반 게임 룸 관리
+- **기본 패킷 구조** : Enter, Move, Leave (3개 패킷)
+- **PacketSession → ClientSession** : 2단계 세션 구조
+
+---
+
+### 🚀 확장 및 추가 구현 (직접 개발)
+
+Unity 클라이언트 컨텐츠 확장에 따라 다음 기능들을 직접 설계하고 구현했습니다:
+
+#### Session 구조 재설계
+강의에서는 `PacketSession → ClientSession` 2단계 구조였으나, 몬스터/오브젝트 추가로 **공통 엔티티 계층 필요**
+
+**기존 구조 (강의)**:
+```
+Session → PacketSession → ClientSession
+```
+
+**확장 구조 (직접 설계)**:
+```
+Session → PacketSession → CommonSession (공통 엔티티 속성)
+                              ├── ClientSession  (플레이어)
+                              ├── MonsterSession (몬스터 AI)
+                              └── ObjectSession  (트랩/오브젝트)
+```
+
+**추가 사항**:
+- `CommonSession` : 공통 속성 통합 (PosX/Y/Z, HP, AnimationId, Damage 등)
+- `MonsterSession` : 몬스터 AI 로직, 플레이어 추적, 자동 공격
+- `ObjectSession` : 트랩/오브젝트 자동 공격 스케줄링
+
+**Server/Session/CommonSession.cs:7-50** - 공통 엔티티 베이스 클래스
+
+---
+
+#### 패킷 시스템 확장
+강의에서는 3개 패킷만 다뤘으나, 게임 컨텐츠 확장에 따라 **16개 패킷으로 확장**
+
+**기존 (강의)**: Enter, Move, Leave (3개)
+
+**확장 (직접 추가)**:
+- **인증/계정** : C_RequestMakeId, S_MakeIdResult, C_RequestLogin, S_LoginResult
+- **엔티티 관리** : S_BroadcastEntityList, S_BroadcastEntityEnter, S_BroadcastEntityLeave, S_BroadcastEntityInfoChange, C_SceneChange
+- **이동/회전** : C_EntityMove, S_BroadcastEntityMove, C_EntityRotation, S_BroadcastEntityRotation
+- **전투** : C_EntityAnimation, S_BroadcastEntityAnimation, C_EntityDash, S_BroadcastEntityDash, C_EntityAttackAnimation, S_BroadcastEntityAttackAnimation, C_EntityAttack, S_BroadcastEntityAttackEffectCreate, S_BroadcastEntityAttackResult
+- **채팅** : C_Chatting, S_BroadcastChatting
+
+**PacketGenerator/PDL.xml:1-249** - 확장된 패킷 정의
+
+---
+
+#### DB 시스템 (Firebase 연동)
+강의에서는 DB를 다루지 않았으나, 게임 데이터 영속성을 위해 **Firebase 연동 시스템 구축**
+
+**추가 구성**:
+- **DBManager** : 통합 DB 관리자 (Auth, RealTime, Firestore 통합)
+- **AuthManager** : Firebase Authentication 연동 (회원가입, 로그인)
+- **RealTimeManager** : Firebase Realtime Database 연동 (플레이어 세션 데이터 저장/로드)
+- **FirestoreManager** : Cloud Firestore 연동 (게임 설정 데이터, Dictionary 캐싱)
+
+**데이터 자동화**:
+- Google Spreadsheet → Apps Script → Firebase → 서버/클라이언트 자동 다운로드
+- 게임 데이터 수정 시 단일 시트 수정으로 클라이언트/서버 동시 최신화
+
+**Server/DB/** - Firebase 연동 모듈 (전체 신규 추가)
+
+---
+
+#### 게임 시스템 Manager (신규 개발)
+게임 컨텐츠 구현을 위해 **핵심 Manager 3개 직접 설계 및 구현**
+
+**AttackManager** (전투 시스템)
+- 다양한 공격 타입 (immediate, move, continue, buff)
+- 충돌 감지 (Circle vs Circle, OBB vs Circle)
+- 데미지 계산, 넉백, 히트 처리
+
+**SpawnManager** (스폰 관리)
+- 씬별 몬스터/오브젝트 초기 스폰
+- 2단계 리스폰 시스템 (Leave 애니메이션 + 대기)
+- mmNumber 기반 O(1) 스폰 위치 조회
+
+**ScheduleManager** (시간 관리)
+- 단일 타이머(100ms)로 모든 시간 기반 작업 관리
+- 애니메이션 자동 전환 (Hit → Idle, Attack → Idle)
+- 몬스터 AI 플레이어 탐지 (100ms마다)
+- 리스폰 예약, 트랩 자동 공격
+
+**Server/AttackManager.cs, SpawnManager.cs, ScheduleManager.cs** - 게임 시스템 Manager (전체 신규 추가)
+
+---
+
+#### 게임 컨텐츠
+- **몬스터 AI** : Idle → 플레이어 감지 → 추적 → 공격 (상태 기반 행동)
+- **전투 시스템** : 4가지 공격 타입, 충돌 감지, 데미지 계산
+- **레벨업 시스템** : 경험치 획득 → 레벨업 → 스탯 재계산
+- **씬 전환 시스템** : 포털 기반 씬 이동, 스폰 위치 관리
+- **실시간 채팅** : 게임 내 텍스트 채팅
+
+---
+
+### 📊 개발 범위 요약
+
+| 구분 | 강의 기반 | 직접 확장/추가 |
+|------|-----------|----------------|
+| **ServerCore** | ✅ 전체 (네트워크 코어) | - |
+| **PacketGenerator** | ✅ 전체 (자동 생성 시스템) | - |
+| **Session 구조** | ✅ Session, PacketSession | ✅ CommonSession, MonsterSession, ObjectSession |
+| **패킷** | ✅ 3개 (Enter, Move, Leave) | ✅ 16개 (인증, 전투, 채팅 등) |
+| **DB 시스템** | - | ✅ DBManager, Auth, RealTime, Firestore |
+| **Manager** | ✅ GameRoom | ✅ AttackManager, SpawnManager, ScheduleManager |
+| **게임 컨텐츠** | - | ✅ 몬스터 AI, 전투, 레벨업, 씬 전환, 채팅 |
 
 ## 📂 프로젝트 구조
 
