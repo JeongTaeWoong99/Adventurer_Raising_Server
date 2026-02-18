@@ -2,7 +2,7 @@
 
 ## 📑 목차
 - [📋 개요](#-개요)
-- [🎬 인게임 사진](#-인게임-사진)
+- [🎬 관련 사진](#-관련-사진)
 - [🔗 관련 링크](#-관련-링크)
 - [✨ 주요 기능](#-주요-기능)
 - [🔨 개발 이력](#-개발-이력)
@@ -38,24 +38,24 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 <table>
   <tr>
     <td align="center">
-      <img width="640" height="360" alt="C# 데디케이트 서버" src="./images/server_dedicate.png" />
+      <img width="640" height="925" alt="C# 데디케이트 서버" src="./images/server_dedicate.png" />
       <br/>
       <b>C# 데디케이트 서버</b>
     </td>
     <td align="center">
-      <img width="640" height="360" alt="FIREBASE DB" src="./images/server_firebase_db.png" />
+      <img width="640" height="925" alt="FIREBASE DB" src="./images/server_firebase_db.png" />
       <br/>
       <b>FIREBASE DB</b>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img width="640" height="360" alt="구글 시트" src="./images/server_google_sheet.png" />
+      <img width="640" height="330" alt="구글 시트" src="./images/server_google_sheet.png" />
       <br/>
       <b>구글 시트</b>
     </td>
     <td align="center">
-      <img width="640" height="360" alt="구글 Apps Script" src="./images/server_google_appscripts.png" />
+      <img width="640" height="330" alt="구글 Apps Script" src="./images/server_google_appscripts.png" />
       <br/>
       <b>구글 Apps Script</b>
     </td>
