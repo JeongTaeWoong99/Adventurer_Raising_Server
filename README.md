@@ -33,19 +33,31 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 
 
 
-## 🎬 인게임 사진
+## 🎬 관련 사진
 
 <table>
   <tr>
     <td align="center">
-      <img width="640" height="360" alt="C# 데디케이트 서버" src="https://github.com/user-attachments/assets/77bc055d-b986-42cb-89b3-5b50de9f131a" />
+      <img width="640" height="360" alt="C# 데디케이트 서버" src="./images/server_데디케이트서버.png" />
       <br/>
       <b>C# 데디케이트 서버</b>
     </td>
     <td align="center">
-      <img width="640" height="360" alt="FIREBASE DB" src="https://github.com/user-attachments/assets/b238cf89-7f3f-4615-bd19-860c3556ad9e" />
+      <img width="640" height="360" alt="FIREBASE DB" src="./images/server_파이어베이스DB.png" />
       <br/>
       <b>FIREBASE DB</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img width="640" height="360" alt="구글 시트" src="./images/server_구글 시트.png" />
+      <br/>
+      <b>구글 시트</b>
+    </td>
+    <td align="center">
+      <img width="640" height="360" alt="구글 Apps Script" src="./images/server_구글 appScripts.png" />
+      <br/>
+      <b>구글 Apps Script</b>
     </td>
   </tr>
 </table>

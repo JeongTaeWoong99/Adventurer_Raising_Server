@@ -5,7 +5,8 @@
       "Bash(dir:*)",
       "Read(//c/Users/ASUS/Desktop/**)",
       "Bash(findstr:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
