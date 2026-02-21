@@ -37,25 +37,25 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 
 <table>
   <tr>
-    <td align="center">
-      <img alt="C# 데디케이트 서버" src="images/server_dedicate.png" />
+    <td align="center" width="50%">
+      <img alt="C# 데디케이트 서버" src="images/server_dedicate.png" width="100%" />
       <br/>
       <b>C# 데디케이트 서버</b>
     </td>
-    <td align="center">
-      <img alt="FIREBASE DB" src="images/server_firebase_db.png" />
+    <td align="center" width="50%">
+      <img alt="FIREBASE DB" src="images/server_firebase_db.png" width="100%" />
       <br/>
       <b>FIREBASE DB</b>
     </td>
   </tr>
   <tr>
-    <td align="center">
-      <img alt="구글 시트" src="images/server_google_sheet.png" />
+    <td align="center" width="50%">
+      <img alt="구글 시트" src="images/server_google_sheet.png" width="100%" />
       <br/>
       <b>구글 시트</b>
     </td>
-    <td align="center">
-      <img alt="구글 Apps Script" src="images/server_google_appscripts.png" />
+    <td align="center" width="50%">
+      <img alt="구글 Apps Script" src="images/server_google_appscripts.png" width="100%" />
       <br/>
       <b>구글 Apps Script</b>
     </td>
