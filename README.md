@@ -22,7 +22,7 @@
 | **타겟 기기** | PC |
 | **참고 강의** | [C#과 유니티로 만드는 MMORPG 게임 개발 시리즈 Part4: 게임 서버](https://www.inflearn.com/course/%EC%9C%A0%EB%8B%88%ED%8B%B0-mmorpg-%EA%B0%9C%EB%B0%9C-part4) |
 
-Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
+Unity 클라이언트와 통신하는 **C# 기반 게임 서버**입니다.
 
 비동기 TCP 소켓 통신, XML 기반 패킷 자동 생성, Firebase 연동을 통해 실시간 멀티플레이어 3D RPG 게임을 지원합니다.
 
@@ -38,9 +38,9 @@ Unity 클라이언트와 통신하는 **C# 데디케이트 서버**입니다.
 <table>
   <tr>
     <td align="center" width="50%">
-      <img alt="C# 데디케이트 서버" src="images/server_dedicate.png" width="100%" />
+      <img alt="C# 기반 게임 서버" src="images/server_cs.png" width="100%" />
       <br/>
-      <b>C# 데디케이트 서버</b>
+      <b>C# 기반 게임 서버</b>
     </td>
     <td align="center" width="50%">
       <img alt="FIREBASE DB" src="images/server_firebase_db.png" width="100%" />
