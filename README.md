@@ -374,13 +374,26 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 
 #### 1️⃣ **ScheduleManager - 고효율 시간 관리**
 
-**기존 문제점** : 각 엔티티별 개별 타이머 생성 시 스레드 분산 및 리소스 낭비
+**📌 기존 문제점**
 
-**해결 방안** :
-- **단일 타이머** : 100ms 주기 하나의 타이머로 모든 작업 관리
-- **이벤트 기반** : OS가 타이머 이벤트를 알려줄 때만 동작 (폴링 없음)
-- **직접 실행** : 큐 처리 없이 콜백에서 즉시 실행 (지연 최소화)
-- **리스트 기반** : 빠른 순회와 완료된 작업 정리
+서버 내 몬스터 AI 및 시간 체크 스킬이 급증하면서, 기존 `Task.Run` 기반 시간 체크 방식은 작업마다 Thread Pool을 점유하여 Task 객체 양산에 따른 GC 부담 및 후속 작업 스케줄링 오버헤드와 지연이 발생했습니다. 또한 OS 스케줄러의 시분할 방식에 의존하는 `Task.Delay` 특성상 누적 오차가 발생하여 개선된 방식이 필요했습니다.
+
+| 비교 항목 | 기존 `Task.Run` 방식 | 개선 단일 타이머 방식 |
+|---|---|---|
+| 시간 체크 방식 | 작업마다 별도 Task 사용 | 단일 타이머 스레드 1개가 담당 |
+| 시간 소스 | OS 소프트웨어 타이머(`Task.Delay`) | OS 타이머 이벤트 (100ms Tick) |
+| 지연 원인 | Thread Pool 고갈 및 문맥 교환 오버헤드 | 제거 (Task 미사용) |
+| CPU 사용 | 대기 Task 양산으로 인한 자원 낭비 | 100ms마다 1회 Tick 동작 |
+| 타이밍 정확도 | 작업 실행 정밀도 낮음 (최대 **300ms** 오차) | 작업 실행 정밀도 높음 (평균 **50ms**) |
+
+**🔧 해결 방안**
+- **단일 타이머 중앙 관리** : 시간 작업마다 Task를 점유하는 대신, 서버 시작 시 100ms 주기의 단일 Timer를 초기화하여 모든 시간 기반 작업을 ScheduleManager에 등록 및 통합
+- **이벤트 기반 Tick 처리** : 100ms마다 발생하는 타이머 Tick에서 등록된 작업들의 경과 시간을 체크하여, 실행 시간에 도달한 작업만 JobQueue에 Push
+- **JobQueue 통합 처리** : 타이머 스레드에서 직접 실행하지 않고 JobQueue에 전달하여 패킷 처리와 동일한 단일 스레드에서 순차 실행되도록 설계
+
+**✨ 핵심 성과**
+- **리소스 효율화** : 스킬 100개 기준으로 기존 100개 Task가 Thread Pool을 점유하던 방식 대비, 단일 타이머로 Thread Pool 점유 없이 시간 작업 처리 성공
+- **정밀도 향상** : 작업이 몰릴 경우 최대 300ms까지 발생하던 누적 오차를 평균 50ms 이내로 향상시키고, JobQueue 통합을 통해 시간 체크 작업 안전성 확보
 
 **활용 사례** :
 - **애니메이션 전환** : Hit → Idle, Attack → Idle 자동 전환
@@ -527,23 +540,32 @@ public void Move(ClientSession session, C_EntityMove movePacket)
 
 ---
 
-#### 5️⃣ **Session 계층 구조**
+#### 5️⃣ **상속 구조와 State Pattern을 활용한 캐릭터 시스템**
 
-엔티티 타입별 공통 기능과 특화 기능 분리 :
+**📌 기존 문제점**
+캐릭터 공통 기능의 중복 구현 및 복잡한 if-else 상태 제어로 인한 가독성 및 유지보수성 저하 문제가 발생했습니다.
+
+**🔧 해결 방안**
+- **계층적 상속 구조 설계** : `CommonSession`(공통 엔티티 속성)에 공통 로직을 집중하고, `ClientSession`(플레이어), `MonsterSession`(몬스터 AI), `ObjectSession`(트랩) 등은 고유 기능만 확장하도록 책임을 분리
+- **Enum 기반 상태 머신 (State Pattern)** : 캐릭터 상태를 `Anime` Enum (Idle, Run, Dash, Attack, Hit 등)으로 정의하고, 상태 변경 시 `switch-case`로 자동 호출되는 상태 메서드로 분리하여 상태 전환 가시성과 확장성을 확보
 
 ```
 Session (ServerCore)
   ↓ [비동기 소켓 I/O]
 PacketSession
   ↓ [패킷 파싱 및 핸들러 라우팅]
-CommonSession
-  ↓ [공통 엔티티 속성: PosX/Y/Z, HP, AnimationId 등]
+CommonSession (공통 엔티티: PosX/Y/Z, HP, AnimationId, Damage 등 + State Pattern)
 ├── ClientSession  (EntityType = Player)
-├── MonsterSession (EntityType = Monster)
-└── ObjectSession  (EntityType = Object/Trap)
+├── MonsterSession (EntityType = Monster, 자동 AI)
+└── ObjectSession  (EntityType = Object/Trap, 자동 공격)
 ```
 
+**✨ 핵심 성과**
+- **코드 중복 제거** : 공통 로직의 중앙 집중화를 통해 중복 코드를 제거하고 전반적인 코드 관리 효율을 극대화
+- **유연한 확장 체계** : 새로운 상태나 캐릭터 추가 시 기존 로직 수정 없이 독립적 확장이 가능한 구조적 기틀 마련
+
 **ServerCore/Session.cs:69-297** - 비동기 소켓 통신 베이스
+**Server/Session/CommonSession.cs:7-50** - 공통 엔티티 베이스 (State Pattern)
 **Server/Session/ClientSession.cs:12-76** - 플레이어 세션 구현
 
 ---
