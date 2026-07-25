@@ -4,7 +4,7 @@
 - [📋 개요](#-개요)
 - [🎬 관련 사진](#-관련-사진)
 - [🔗 관련 링크](#-관련-링크)
-- [🔧 시스템 구조도](#-시스템-구조도)
+- [🔧 시스템 아키텍처](#-시스템-아키텍처-중앙-집중형-cs-구조)
 - [✨ 주요 기능](#-주요-기능)
 - [🔨 개발 이력](#-개발-이력)
 - [📂 프로젝트 구조](#-프로젝트-구조)
@@ -16,21 +16,27 @@
 
 | 항목 | 내용 |
 |---|---|
-| **기간** | 2025.05 ~ 2025.08 |
+| **기간** | 25.05 ~ 25.08 (4개월) |
 | **인원** | 1인 개발 |
 | **역할** | 클라이언트, 서버, DB |
-| **도구** | UNITY, C#, TCP SOCKET, FIREBASE |
+| **도구** | Unity, C#, TCP Socket, Firebase |
 | **타겟 기기** | PC |
+| **참여/입상** | X |
 | **참고 강의** | [C#과 유니티로 만드는 MMORPG 게임 개발 시리즈 Part4: 게임 서버](https://www.inflearn.com/course/%EC%9C%A0%EB%8B%88%ED%8B%B0-mmorpg-%EA%B0%9C%EB%B0%9C-part4) |
 
-Unity 클라이언트와 통신하는 **C# 기반 게임 서버**입니다.
+판타지 배경의 쿼터뷰 **3D 멀티 RPG 게임**으로, Unity 클라이언트와 통신하는 **C# 기반 게임 서버**입니다.
 
-비동기 TCP 소켓 통신, XML 기반 패킷 자동 생성, Firebase 연동을 통해 실시간 멀티플레이어 3D RPG 게임을 지원합니다.
+비동기 TCP 소켓 통신, XML 기반 패킷 자동 생성, Firebase 연동을 통해 실시간 멀티플레이를 지원합니다.
 
 ### 개발 배경
-참고 강의를 통해 **서버 프로그래밍 이론**과 **기본 프레임워크**(네트워크 코어, 패킷 자동 생성 시스템)를 학습했습니다. 
+**3D 게임 개발 및 네트워크 시스템에 대한 전반적 이해**를 목적으로, 참고 강의를 통해 **서버 프레임워크를 먼저 학습**한 뒤, **클라이언트 개발에 맞춰 서버와 DB를 확장 구현**하였습니다.
 
-이후 Unity 클라이언트와 연동하면서 게임 컨텐츠가 확장됨에 따라, Session 구조 재설계, DB 시스템 구축, 게임 Manager 개발 등 **서버 기능을 직접 확장 및 추가**했습니다.
+강의에서는 서버 프로그래밍 이론과 기본 프레임워크(네트워크 코어, 패킷 자동 생성 시스템)를 학습했으며, 이후 Unity 클라이언트와 연동하면서 게임 컨텐츠가 확장됨에 따라 Session 구조 재설계, DB 시스템 구축, 게임 Manager 개발 등 **서버 기능을 직접 확장 및 추가**했습니다.
+
+### 담당 역할
+- **서버 프레임워크 학습 및 서버·DB 확장** : 클라이언트 콘텐츠 추가에 맞춰 서버·DB 기능 확장 및 추가
+- **클라이언트 콘텐츠 개발 및 패킷 처리** : 3D RPG 콘텐츠 구현, 서버 패킷 송신/수신 및 클라이언트 동기화
+- **데이터 자동화 시스템 구축** : 클라이언트·서버 데이터 자동 동기화 파이프라인 구축
 
 
 
@@ -44,9 +50,9 @@ Unity 클라이언트와 통신하는 **C# 기반 게임 서버**입니다.
       <b>C# 기반 게임 서버</b>
     </td>
     <td align="center" width="50%">
-      <img alt="FIREBASE DB" src="images/server_firebase_db.png" width="100%" />
+      <img alt="Firebase DB" src="images/server_firebase_db.png" width="100%" />
       <br/>
-      <b>FIREBASE DB</b>
+      <b>DB - Firebase</b>
     </td>
   </tr>
   <tr>
@@ -70,10 +76,10 @@ Unity 클라이언트와 통신하는 **C# 기반 게임 서버**입니다.
 |---------------|---|
 | **클라 GitHub** | [바로가기](https://github.com/JeongTaeWoong99/Adventurer_Raising/tree/main) |
 
-## 🔧 시스템 구조도
+## 🔧 시스템 아키텍처 (중앙 집중형 C/S 구조)
 
 <p align="center">
-  <img width="1056" height="501" alt="시스템 구조도" src="images/시스템구조도.png" />
+  <img width="1056" height="501" alt="시스템 아키텍처 (중앙 집중형 C/S 구조)" src="images/시스템구조도.png" />
 </p>
 
 ## ✨ 주요 기능
@@ -194,13 +200,13 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 ---
 
 #### 패킷 시스템 확장
-강의에서는 3개 패킷만 다뤘으나, 게임 컨텐츠 확장에 따라 **16개 패킷으로 확장**
+강의에서는 3개 패킷만 다뤘으나, 게임 컨텐츠 확장에 따라 **총 25개 패킷으로 확장**
 
 **기존 (강의)**: Enter, Move, Leave (3개)
 
 **확장 (직접 추가)**:
 - **인증/계정** : C_RequestMakeId, S_MakeIdResult, C_RequestLogin, S_LoginResult
-- **엔티티 관리** : S_BroadcastEntityList, S_BroadcastEntityEnter, S_BroadcastEntityLeave, S_BroadcastEntityInfoChange, C_SceneChange
+- **엔티티 관리** : S_BroadcastEntityList, S_BroadcastEntityEnter, C_EntityLeave, S_BroadcastEntityLeave, S_BroadcastEntityInfoChange, C_SceneChange
 - **이동/회전** : C_EntityMove, S_BroadcastEntityMove, C_EntityRotation, S_BroadcastEntityRotation
 - **전투** : C_EntityAnimation, S_BroadcastEntityAnimation, C_EntityDash, S_BroadcastEntityDash, C_EntityAttackAnimation, S_BroadcastEntityAttackAnimation, C_EntityAttack, S_BroadcastEntityAttackEffectCreate, S_BroadcastEntityAttackResult
 - **채팅** : C_Chatting, S_BroadcastChatting
@@ -265,7 +271,7 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 | **ServerCore** | ✅ 전체 (네트워크 코어) | - |
 | **PacketGenerator** | ✅ 전체 (자동 생성 시스템) | - |
 | **Session 구조** | ✅ Session, PacketSession | ✅ CommonSession, MonsterSession, ObjectSession |
-| **패킷** | ✅ 3개 (Enter, Move, Leave) | ✅ 16개 (인증, 전투, 채팅 등) |
+| **패킷** | ✅ 3개 (Enter, Move, Leave) | ✅ 총 25개 (인증, 전투, 채팅 등) |
 | **DB 시스템** | - | ✅ DBManager, Auth, RealTime, Firestore |
 | **Manager** | ✅ GameRoom | ✅ AttackManager, SpawnManager, ScheduleManager |
 | **게임 컨텐츠** | - | ✅ 몬스터 AI, 전투, 레벨업, 씬 전환, 채팅 |
@@ -376,13 +382,13 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 
 **📌 기존 문제점**
 
-서버 내 몬스터 AI 및 시간 체크 스킬이 급증하면서, 기존 `Task.Run` 기반 시간 체크 방식은 작업마다 Thread Pool을 점유하여 Task 객체 양산에 따른 GC 부담 및 후속 작업 스케줄링 오버헤드와 지연이 발생했습니다. 또한 OS 스케줄러의 시분할 방식에 의존하는 `Task.Delay` 특성상 누적 오차가 발생하여 개선된 방식이 필요했습니다.
+서버 내 몬스터 AI 및 시간 체크 스킬이 급증하면서, 기존 `Task.Run` 기반 방식은 **작업마다 대기 Task를 생성**해 Task 객체 양산에 따른 GC 부담과 후속 작업 스케줄링 오버헤드·지연이 발생했습니다. 또한 OS 스케줄러의 시분할 방식에 의존하는 `Task.Delay` 방식 특성상 누적 오차가 발생하여 개선된 방식이 필요했습니다.
 
 | 비교 항목 | 기존 `Task.Run` 방식 | 개선 단일 타이머 방식 |
 |---|---|---|
-| 시간 체크 방식 | 작업마다 별도 Task 사용 | 단일 타이머 스레드 1개가 담당 |
+| 시간 체크 방식 | 시간 체크 작업마다 별도 Task 사용 | 단일 타이머 스레드 1개가 담당 |
 | 시간 소스 | OS 소프트웨어 타이머(`Task.Delay`) | OS 타이머 이벤트 (100ms Tick) |
-| 지연 원인 | Thread Pool 고갈 및 문맥 교환 오버헤드 | 제거 (Task 미사용) |
+| 지연 원인 | Thread Pool 고갈 및 문맥 교환 오버헤드 | 대폭 감소 (대기 Task 미사용) |
 | CPU 사용 | 대기 Task 양산으로 인한 자원 낭비 | 100ms마다 1회 Tick 동작 |
 | 타이밍 정확도 | 작업 실행 정밀도 낮음 (최대 **300ms** 오차) | 작업 실행 정밀도 높음 (평균 **50ms**) |
 
@@ -392,8 +398,8 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 - **JobQueue 통합 처리** : 타이머 스레드에서 직접 실행하지 않고 JobQueue에 전달하여 패킷 처리와 동일한 단일 스레드에서 순차 실행되도록 설계
 
 **✨ 핵심 성과**
-- **리소스 효율화** : 스킬 100개 기준으로 기존 100개 Task가 Thread Pool을 점유하던 방식 대비, 단일 타이머로 Thread Pool 점유 없이 시간 작업 처리 성공
-- **정밀도 향상** : 작업이 몰릴 경우 최대 300ms까지 발생하던 누적 오차를 평균 50ms 이내로 향상시키고, JobQueue 통합을 통해 시간 체크 작업 안전성 확보
+- **리소스 효율화** : 스킬 100개 기준 100개의 대기 Task가 생성되던 방식을, **단일 타이머의 Tick 1회로 통합**하여 Task 객체 생성과 GC 부담을 제거
+- **정밀도 향상** : 최대 300ms까지 발생하던 오차를 평균 50ms 이내로 개선하고, JobQueue 통합으로 **패킷 처리와 동일한 스레드에서 순차 실행되도록 하여 스레드 안전성 확보**
 
 **활용 사례** :
 - **애니메이션 전환** : Hit → Idle, Attack → Idle 자동 전환
@@ -402,6 +408,7 @@ Session → PacketSession → CommonSession (공통 엔티티 속성)
 - **트랩 자동 공격** : 쿨다운 기반 반복 공격
 
 **Server/ScheduleManager.cs:73-96** - 타이머 초기화 및 이벤트 핸들러
+**Server/ScheduleManager.cs:104-129** - 실행 시간 도달 작업 필터링 및 JobQueue 전달
 
 ```csharp
 private void InitializeTimer()
@@ -416,8 +423,21 @@ private void OnTimerElapsed(object sender, ElapsedEventArgs e)
     DateTime now = DateTime.UtcNow;
     lock (_lock)
     {
-        ExecuteScheduledTasks(now);      // 스케줄 작업 직접 실행
+        ExecuteScheduledTasks(now);      // 실행 시간 도달 작업 필터링 및 Push
         UpdateAnimationStates(now);      // 애니메이션 상태 업데이트
+    }
+}
+
+private void ExecuteScheduledTasks(DateTime now)
+{
+    // 실행 시간에 도달한 작업만 필터링
+    var tasksToExecute = _scheduledTasks.Where(t => t.ExecuteTime <= now).ToList();
+
+    foreach (var task in tasksToExecute)
+    {
+        // 타이머 스레드에서 직접 실행하지 않고, GameRoom의 JobQueue로 전달
+        if (Program.GameRooms.TryGetValue(task.RoomName, out var room))
+            room.Push(() => task.Task?.Invoke());
     }
 }
 ```
@@ -499,9 +519,8 @@ DBManager._firestore.InitializeDictionaries();
 ```
 
 **효과** :
-- 단일 시트 수정만으로 클라이언트/서버 동시 최신화되어 수동 복사 작업과 데이터 불일치를 완전히 제거
-- 시트에서 직접 데이터 수정 가능하여 반복 작업 시간을 대폭 단축
-- Firebase 중앙 관리로 데이터 버전 충돌과 휴먼 에러를 방지
+- **데이터 정합성 확보** : Google Spreadsheet를 단일 원본으로 두어, 클라이언트와 서버가 항상 동일한 데이터를 참조하는 구조 확보
+- **단일 소스 관리(Single Source of Truth)** : 단일 시트 수정만으로 클라이언트/서버가 동시 최신화되어, 수동 복사 작업의 번거로움과 휴먼 에러를 제거
 
 ---
 
@@ -516,7 +535,8 @@ DBManager._firestore.InitializeDictionaries();
 - 락 없는 게임 로직 (큐 Push/Pop에만 락 사용)
 
 **ServerCore/JobQueue.cs** - 작업 큐 구현
-**Server/GameRoom.cs:40-65** - 40FPS Flush를 통한 동기화
+**Server/Program.cs:41-57** - 25ms(40FPS) 주기 Flush 루프
+**Server/GameRoom.cs:48-65** - Flush를 통한 배치 브로드캐스트
 
 ```csharp
 // 플레이어 이동 예시
@@ -540,32 +560,33 @@ public void Move(ClientSession session, C_EntityMove movePacket)
 
 ---
 
-#### 5️⃣ **상속 구조와 State Pattern을 활용한 캐릭터 시스템**
+#### 5️⃣ **상속 구조와 상태 머신을 활용한 캐릭터 시스템**
 
 **📌 기존 문제점**
 캐릭터 공통 기능의 중복 구현 및 복잡한 if-else 상태 제어로 인한 가독성 및 유지보수성 저하 문제가 발생했습니다.
 
 **🔧 해결 방안**
 - **계층적 상속 구조 설계** : `CommonSession`(공통 엔티티 속성)에 공통 로직을 집중하고, `ClientSession`(플레이어), `MonsterSession`(몬스터 AI), `ObjectSession`(트랩) 등은 고유 기능만 확장하도록 책임을 분리
-- **Enum 기반 상태 머신 (State Pattern)** : 캐릭터 상태를 `Anime` Enum (Idle, Run, Dash, Attack, Hit 등)으로 정의하고, 상태 변경 시 `switch-case`로 자동 호출되는 상태 메서드로 분리하여 상태 전환 가시성과 확장성을 확보
+- **Enum 기반 상태 머신 (State Machine)** : 캐릭터 상태를 `Anime` Enum (Idle, Run, Dash, Attack, Hit 등)으로 정의하고, 상태별 로직을 메서드로 분리한 뒤 `switch-case`로 자동 호출하여 상태 전환 가시성과 확장성을 확보
 
 ```
 Session (ServerCore)
   ↓ [비동기 소켓 I/O]
 PacketSession
   ↓ [패킷 파싱 및 핸들러 라우팅]
-CommonSession (공통 엔티티: PosX/Y/Z, HP, AnimationId, Damage 등 + State Pattern)
+CommonSession (공통 엔티티: PosX/Y/Z, HP, AnimationId, Damage 등 + 상태 머신)
 ├── ClientSession  (EntityType = Player)
 ├── MonsterSession (EntityType = Monster, 자동 AI)
 └── ObjectSession  (EntityType = Object/Trap, 자동 공격)
 ```
 
 **✨ 핵심 성과**
-- **코드 중복 제거** : 공통 로직의 중앙 집중화를 통해 중복 코드를 제거하고 전반적인 코드 관리 효율을 극대화
-- **유연한 확장 체계** : 새로운 상태나 캐릭터 추가 시 기존 로직 수정 없이 독립적 확장이 가능한 구조적 기틀 마련
+- **코드 중복 제거** : 공통 로직을 `CommonSession`에 집중하여, 플레이어·몬스터·오브젝트가 동일 로직을 중복 구현하지 않도록 정리
+- **상태 흐름 가시화** : 중첩되던 if-else를 상태별 메서드로 분리해, 각 상태의 동작과 전환 지점을 코드에서 바로 확인 가능
+- **유연한 확장 체계** : 신규 캐릭터가 공통 로직을 재구현하지 않고 확장 가능한 구조적 기틀 마련
 
 **ServerCore/Session.cs:69-297** - 비동기 소켓 통신 베이스
-**Server/Session/CommonSession.cs:7-50** - 공통 엔티티 베이스 (State Pattern)
+**Server/Session/CommonSession.cs:7-50** - 공통 엔티티 베이스 (상태 머신)
 **Server/Session/ClientSession.cs:12-76** - 플레이어 세션 구현
 
 ---
